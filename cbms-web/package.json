@@ -17,11 +17,6 @@
     "@angular/forms": "^22.1.0",
     "@angular/platform-browser": "^22.1.0",
     "@angular/router": "^22.1.0",
-    "@capacitor/android": "^8.5.2",
-    "@capacitor/cli": "^8.5.2",
-    "@capacitor/core": "^8.5.2",
-    "@capacitor/ios": "^8.5.2",
-    "@ionic/angular": "^9.0.4",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
