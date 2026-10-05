@@ -14,8 +14,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 @Service
 public class UserServiceImplement implements UserService{
-    UserRepository repository;
-    PasswordEncoder passwordEncoder;
+    private final UserRepository repository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public ApiResponse<Void> createAccount(CreateAccountRequest request){
