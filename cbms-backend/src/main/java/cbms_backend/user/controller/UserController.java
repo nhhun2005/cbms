@@ -3,6 +3,7 @@ package cbms_backend.user.controller;
 import cbms_backend.core.util.ApiResponse;
 import cbms_backend.user.dto.create_account.CreateAccountRequest;
 import cbms_backend.user.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +20,7 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createUser(
-            @RequestBody CreateAccountRequest request
+            @Valid @RequestBody CreateAccountRequest request
             ){
 
         return ResponseEntity
