@@ -31,4 +31,23 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(message));
     }
+    @ExceptionHandler(UserNotExistsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUserNotExists(UserNotExistsException ex){
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+    @ExceptionHandler(InvalidUserCredentialsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvalidUserCredentials(InvalidUserCredentialsException ex){
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(UserAlreadyInactiveException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUserAlreadyInactive(UserAlreadyInactiveException ex){
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
 }

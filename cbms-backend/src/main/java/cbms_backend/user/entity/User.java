@@ -35,6 +35,10 @@ public class User {
     @Column(nullable = false)
     private String password; // should be hashed
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserStatus status;
+
 
     @ManyToMany
     @JoinTable(
