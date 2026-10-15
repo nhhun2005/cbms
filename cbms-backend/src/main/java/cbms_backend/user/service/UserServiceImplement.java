@@ -6,6 +6,7 @@ import cbms_backend.core.exception.UserAlreadyInactiveException;
 import cbms_backend.core.exception.UserNotExistsException;
 import cbms_backend.core.util.ApiResponse;
 import cbms_backend.user.dto.create_account.CreateAccountRequest;
+import cbms_backend.user.dto.get_user.GetUserResponse;
 import cbms_backend.user.dto.update_user.UpdateNameRequest;
 import cbms_backend.user.entity.User;
 import cbms_backend.user.entity.UserStatus;
@@ -13,6 +14,7 @@ import cbms_backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -64,5 +66,15 @@ public class UserServiceImplement implements UserService{
         repository.save(user);
 
         return ApiResponse.success("User disabled successfully");
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<GetUserResponse> getUser(UUID id) {
+        User user = repository.findById(id)
+                .orElseThrow(() -> new UserNotExistsException("User does not exist"));
+
+        GetUserResponse response = GetUserResponse.fromEntity(user);
+        return ApiResponse.success(response, "User retrieved successfully");
     }
 }

@@ -9,6 +9,7 @@ import lombok.Setter;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,13 +20,14 @@ import java.util.Set;
 public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private String id;
+    private UUID id;
 
     @Column(nullable = false)
     private String name;
 
     @ManyToMany
     @JoinTable(
+            name = "role_permissions",
             joinColumns = @JoinColumn(name="role_id"),
             inverseJoinColumns = @JoinColumn(name="permission_id")
     )

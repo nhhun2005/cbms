@@ -2,6 +2,7 @@ package cbms_backend.user.controller;
 
 import cbms_backend.core.util.ApiResponse;
 import cbms_backend.user.dto.create_account.CreateAccountRequest;
+import cbms_backend.user.dto.get_user.GetUserResponse;
 import cbms_backend.user.dto.update_user.UpdateNameRequest;
 import cbms_backend.user.service.UserService;
 import jakarta.validation.Valid;
@@ -40,6 +41,11 @@ public class UserController {
     @PatchMapping("/{id}/disable")
     public ResponseEntity<ApiResponse<Void>> disableUser(@PathVariable UUID id) {
         return ResponseEntity.ok(service.disableUser(id));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<GetUserResponse>> getUser(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.getUser(id));
     }
 
 }

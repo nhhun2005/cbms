@@ -5,6 +5,8 @@ import cbms_backend.core.exception.UserAlreadyInactiveException;
 import cbms_backend.core.exception.UserNotExistsException;
 import cbms_backend.core.util.ApiResponse;
 import cbms_backend.user.dto.create_account.CreateAccountRequest;
+import cbms_backend.user.dto.get_user.GetUserResponse;
+import cbms_backend.user.entity.Role;
 import cbms_backend.user.entity.User;
 import cbms_backend.user.entity.UserStatus;
 import cbms_backend.user.repository.UserRepository;
@@ -133,5 +135,71 @@ class UserServiceImplementTest {
 
         assertThrows(UserAlreadyInactiveException.class, () -> service.disableUser(id));
         verify(repository, never()).save(any(User.class));
+    }
+
+    @Test
+    void getUser_shouldReturnUserSuccessfully_whenUserHasNoRoles() {
+        UUID id = UUID.randomUUID();
+        User user = new User();
+        user.setId(id);
+        user.setName("Huan");
+        user.setPhone("0354023611");
+        user.setPassword("encoded-password");
+        user.setStatus(UserStatus.WORKING);
+
+        when(repository.findById(id)).thenReturn(Optional.of(user));
+
+        ApiResponse<GetUserResponse> response = service.getUser(id);
+
+        assertNotNull(response);
+        assertNotNull(response.getData());
+        assertEquals(id, response.getData().id());
+        assertEquals("Huan", response.getData().name());
+        assertEquals("0354023611", response.getData().phone());
+        assertEquals(UserStatus.WORKING, response.getData().status());
+        assertNull(response.getData().roles());
+    }
+
+    @Test
+    void getUser_shouldReturnUserSuccessfully_whenUserHasRoles() {
+        UUID id = UUID.randomUUID();
+        User user = new User();
+        user.setId(id);
+        user.setName("Huan");
+        user.setPhone("0354023611");
+        user.setPassword("encoded-password");
+        user.setStatus(UserStatus.WORKING);
+
+        Role adminRole = new Role();
+        adminRole.setName("ADMIN");
+
+        Role staffRole = new Role();
+        staffRole.setName("STAFF");
+
+        user.setRoles(java.util.Set.of(adminRole, staffRole));
+
+        when(repository.findById(id)).thenReturn(Optional.of(user));
+
+        ApiResponse<GetUserResponse> response = service.getUser(id);
+
+        assertNotNull(response);
+        assertNotNull(response.getData());
+        assertEquals(id, response.getData().id());
+        assertEquals("Huan", response.getData().name());
+        assertEquals("0354023611", response.getData().phone());
+        assertEquals(UserStatus.WORKING, response.getData().status());
+        assertNotNull(response.getData().roles());
+        assertEquals(2, response.getData().roles().size());
+        assertTrue(response.getData().roles().contains("ADMIN"));
+        assertTrue(response.getData().roles().contains("STAFF"));
+    }
+
+    @Test
+    void getUser_shouldThrowException_whenUserNotExists() {
+        UUID id = UUID.randomUUID();
+
+        when(repository.findById(id)).thenReturn(Optional.empty());
+
+        assertThrows(UserNotExistsException.class, () -> service.getUser(id));
     }
 }
