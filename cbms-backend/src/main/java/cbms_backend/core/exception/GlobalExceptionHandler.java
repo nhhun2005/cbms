@@ -108,5 +108,20 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(ex.getMessage()));
     }
+
+    @ExceptionHandler(InvalidInvitationTokenException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvalidInvitationToken(InvalidInvitationTokenException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvitationTokenExpiredException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvitationTokenExpired(InvitationTokenExpiredException ex) {
+        return ResponseEntity
+                .status(HttpStatus.GONE)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
 }
+
 
