@@ -89,6 +89,22 @@ public class UserServiceImplement implements UserService {
     }
 
     @Override
+    @Transactional
+    public ApiResponse<Void> enableUser(UUID id) {
+        User user = repository.findById(id)
+                .orElseThrow(() -> new UserNotExistsException("User does not exist"));
+
+        if (user.getStatus() == UserStatus.WORKING) {
+            throw new UserAlreadyActiveException("User is already active");
+        }
+
+        user.setStatus(UserStatus.WORKING);
+        repository.save(user);
+
+        return ApiResponse.success("User enabled successfully");
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public ApiResponse<GetUserResponse> getUser(UUID id) {
         User user = repository.findByIdWithRoles(id)

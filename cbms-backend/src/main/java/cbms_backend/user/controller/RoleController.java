@@ -71,4 +71,10 @@ public class RoleController {
     ) {
         return ResponseEntity.ok(roleService.removePermissionFromRole(roleId, permissionId));
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteRole(@PathVariable UUID id) {
+        return ResponseEntity.ok(roleService.deleteRole(id));
+    }
 }
+

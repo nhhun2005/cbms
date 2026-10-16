@@ -172,6 +172,46 @@ class UserServiceImplementTest {
     }
 
     @Test
+    void enableUser_shouldEnableUserSuccessfully() {
+        UUID id = UUID.randomUUID();
+        User user = new User();
+        user.setStatus(UserStatus.INACTIVE);
+
+        when(repository.findById(id)).thenReturn(Optional.of(user));
+
+        ApiResponse<Void> response = service.enableUser(id);
+
+        assertNotNull(response);
+        assertEquals(UserStatus.WORKING, user.getStatus());
+        assertEquals("User enabled successfully", response.getMessage());
+        verify(repository).save(user);
+    }
+
+    @Test
+    void enableUser_shouldThrowException_whenUserNotExists() {
+        UUID id = UUID.randomUUID();
+
+        when(repository.findById(id)).thenReturn(Optional.empty());
+
+        assertThrows(UserNotExistsException.class, () -> service.enableUser(id));
+        verify(repository, never()).save(any(User.class));
+    }
+
+    @Test
+    void enableUser_shouldThrowException_whenUserAlreadyActive() {
+        UUID id = UUID.randomUUID();
+        User user = new User();
+        user.setStatus(UserStatus.WORKING);
+
+        when(repository.findById(id)).thenReturn(Optional.of(user));
+
+        assertThrows(cbms_backend.core.exception.UserAlreadyActiveException.class,
+                () -> service.enableUser(id));
+        verify(repository, never()).save(any(User.class));
+    }
+
+
+    @Test
     void getUser_shouldReturnUserSuccessfully_whenUserHasNoRoles() {
         UUID id = UUID.randomUUID();
         User user = new User();

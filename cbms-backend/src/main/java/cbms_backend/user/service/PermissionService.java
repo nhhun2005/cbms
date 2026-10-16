@@ -11,4 +11,6 @@ public interface PermissionService {
     ApiResponse<PermissionResponse> createPermission(CreatePermissionRequest request);
     ApiResponse<List<PermissionResponse>> getAllPermissions();
     ApiResponse<PermissionResponse> getPermissionById(UUID id);
+    ApiResponse<Void> deletePermission(UUID id);
 }
+

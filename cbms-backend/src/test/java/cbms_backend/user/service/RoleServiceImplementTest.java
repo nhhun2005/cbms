@@ -195,4 +195,47 @@ class RoleServiceImplementTest {
         assertTrue(response.getData().permissions().isEmpty());
         verify(roleRepository).save(role);
     }
+
+    @Test
+    void deleteRole_shouldDeleteRoleSuccessfully_whenNoUsersAssigned() {
+        UUID roleId = UUID.randomUUID();
+        Role role = new Role();
+        role.setId(roleId);
+        role.setName("TEMP_ROLE");
+
+        when(roleRepository.findById(roleId)).thenReturn(Optional.of(role));
+        when(roleRepository.countUsersByRoleId(roleId)).thenReturn(0L);
+
+        ApiResponse<Void> response = roleService.deleteRole(roleId);
+
+        assertNotNull(response);
+        assertEquals("Role deleted successfully", response.getMessage());
+        verify(roleRepository).delete(role);
+    }
+
+    @Test
+    void deleteRole_shouldThrowException_whenRoleNotExists() {
+        UUID roleId = UUID.randomUUID();
+
+        when(roleRepository.findById(roleId)).thenReturn(Optional.empty());
+
+        assertThrows(RoleNotExistsException.class, () -> roleService.deleteRole(roleId));
+        verify(roleRepository, never()).delete(any(Role.class));
+    }
+
+    @Test
+    void deleteRole_shouldThrowException_whenAssignedToUsers() {
+        UUID roleId = UUID.randomUUID();
+        Role role = new Role();
+        role.setId(roleId);
+        role.setName("IN_USE_ROLE");
+
+        when(roleRepository.findById(roleId)).thenReturn(Optional.of(role));
+        when(roleRepository.countUsersByRoleId(roleId)).thenReturn(3L);
+
+        assertThrows(cbms_backend.core.exception.RoleInUseException.class,
+                () -> roleService.deleteRole(roleId));
+        verify(roleRepository, never()).delete(any(Role.class));
+    }
 }
+

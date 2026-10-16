@@ -158,4 +158,27 @@ class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Role removed from user successfully"));
     }
+
+    @Test
+    void disableUser_shouldReturn200() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        when(userService.disableUser(id)).thenReturn(ApiResponse.success("User disabled successfully"));
+
+        mockMvc.perform(patch("/api/v1/users/" + id + "/disable"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("User disabled successfully"));
+    }
+
+    @Test
+    void enableUser_shouldReturn200() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        when(userService.enableUser(id)).thenReturn(ApiResponse.success("User enabled successfully"));
+
+        mockMvc.perform(patch("/api/v1/users/" + id + "/enable"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("User enabled successfully"));
+    }
 }
+

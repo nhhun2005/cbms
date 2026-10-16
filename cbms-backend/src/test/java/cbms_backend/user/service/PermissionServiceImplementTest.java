@@ -109,4 +109,48 @@ class PermissionServiceImplementTest {
         assertThrows(PermissionNotExistsException.class,
                 () -> permissionService.getPermissionById(id));
     }
+
+    @Test
+    void deletePermission_shouldDeletePermissionSuccessfully_whenNoRolesAssigned() {
+        UUID id = UUID.randomUUID();
+        Permission p = new Permission();
+        p.setId(id);
+        p.setName("UNUSED_PERMISSION");
+
+        when(permissionRepository.findById(id)).thenReturn(Optional.of(p));
+        when(permissionRepository.countRolesByPermissionId(id)).thenReturn(0L);
+
+        ApiResponse<Void> response = permissionService.deletePermission(id);
+
+        assertNotNull(response);
+        assertEquals("Permission deleted successfully", response.getMessage());
+        verify(permissionRepository).delete(p);
+    }
+
+    @Test
+    void deletePermission_shouldThrowException_whenPermissionNotExists() {
+        UUID id = UUID.randomUUID();
+
+        when(permissionRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThrows(PermissionNotExistsException.class,
+                () -> permissionService.deletePermission(id));
+        verify(permissionRepository, never()).delete(any(Permission.class));
+    }
+
+    @Test
+    void deletePermission_shouldThrowException_whenAssignedToRoles() {
+        UUID id = UUID.randomUUID();
+        Permission p = new Permission();
+        p.setId(id);
+        p.setName("IN_USE_PERMISSION");
+
+        when(permissionRepository.findById(id)).thenReturn(Optional.of(p));
+        when(permissionRepository.countRolesByPermissionId(id)).thenReturn(2L);
+
+        assertThrows(cbms_backend.core.exception.PermissionInUseException.class,
+                () -> permissionService.deletePermission(id));
+        verify(permissionRepository, never()).delete(any(Permission.class));
+    }
 }
+

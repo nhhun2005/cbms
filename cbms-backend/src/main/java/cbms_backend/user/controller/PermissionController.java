@@ -37,4 +37,10 @@ public class PermissionController {
     public ResponseEntity<ApiResponse<PermissionResponse>> getPermissionById(@PathVariable UUID id) {
         return ResponseEntity.ok(permissionService.getPermissionById(id));
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deletePermission(@PathVariable UUID id) {
+        return ResponseEntity.ok(permissionService.deletePermission(id));
+    }
 }
+

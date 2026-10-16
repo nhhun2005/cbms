@@ -2,6 +2,7 @@ package cbms_backend.user.service;
 
 import cbms_backend.core.exception.PermissionNotExistsException;
 import cbms_backend.core.exception.RoleAlreadyExistsException;
+import cbms_backend.core.exception.RoleInUseException;
 import cbms_backend.core.exception.RoleNotExistsException;
 import cbms_backend.core.util.ApiResponse;
 import cbms_backend.user.dto.permission.PermissionResponse;
@@ -143,4 +144,21 @@ public class RoleServiceImplement implements RoleService {
         Role updated = roleRepository.save(role);
         return ApiResponse.success(RoleResponse.fromEntity(updated), "Permission removed from role successfully");
     }
+
+    @Override
+    @Transactional
+    public ApiResponse<Void> deleteRole(UUID id) {
+        Role role = roleRepository.findById(id)
+                .orElseThrow(() -> new RoleNotExistsException("Role does not exist"));
+
+        if (roleRepository.countUsersByRoleId(id) > 0) {
+            throw new RoleInUseException("Cannot delete role because it is currently assigned to one or more users");
+        }
+
+        role.getPermissions().clear();
+        roleRepository.delete(role);
+
+        return ApiResponse.success("Role deleted successfully");
+    }
 }
+

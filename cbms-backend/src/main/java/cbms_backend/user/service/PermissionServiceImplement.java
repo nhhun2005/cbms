@@ -1,6 +1,7 @@
 package cbms_backend.user.service;
 
 import cbms_backend.core.exception.PermissionAlreadyExistsException;
+import cbms_backend.core.exception.PermissionInUseException;
 import cbms_backend.core.exception.PermissionNotExistsException;
 import cbms_backend.core.util.ApiResponse;
 import cbms_backend.user.dto.permission.CreatePermissionRequest;
@@ -50,4 +51,20 @@ public class PermissionServiceImplement implements PermissionService {
                 .orElseThrow(() -> new PermissionNotExistsException("Permission does not exist"));
         return ApiResponse.success(PermissionResponse.fromEntity(permission), "Permission retrieved successfully");
     }
+
+    @Override
+    @Transactional
+    public ApiResponse<Void> deletePermission(UUID id) {
+        Permission permission = permissionRepository.findById(id)
+                .orElseThrow(() -> new PermissionNotExistsException("Permission does not exist"));
+
+        if (permissionRepository.countRolesByPermissionId(id) > 0) {
+            throw new PermissionInUseException("Cannot delete permission because it is currently assigned to one or more roles");
+        }
+
+        permissionRepository.delete(permission);
+
+        return ApiResponse.success("Permission deleted successfully");
+    }
 }
+

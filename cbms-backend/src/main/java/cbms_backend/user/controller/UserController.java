@@ -55,6 +55,12 @@ public class UserController {
         return ResponseEntity.ok(service.disableUser(id));
     }
 
+    @PatchMapping("/{id}/enable")
+    public ResponseEntity<ApiResponse<Void>> enableUser(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.enableUser(id));
+    }
+
+
     @GetMapping("/{id}/roles")
     public ResponseEntity<ApiResponse<Set<RoleResponse>>> getRolesByUserId(@PathVariable UUID id) {
         return ResponseEntity.ok(service.getRolesByUserId(id));

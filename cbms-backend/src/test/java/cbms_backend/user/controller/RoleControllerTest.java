@@ -139,4 +139,28 @@ class RoleControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Role does not exist"));
     }
+
+    @Test
+    void deleteRole_shouldReturn200_whenSuccessful() throws Exception {
+        UUID roleId = UUID.randomUUID();
+
+        when(roleService.deleteRole(roleId)).thenReturn(ApiResponse.success("Role deleted successfully"));
+
+        mockMvc.perform(delete("/api/v1/roles/" + roleId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Role deleted successfully"));
+    }
+
+    @Test
+    void deleteRole_shouldReturn409_whenInUse() throws Exception {
+        UUID roleId = UUID.randomUUID();
+
+        when(roleService.deleteRole(roleId))
+                .thenThrow(new cbms_backend.core.exception.RoleInUseException("Cannot delete role because it is currently assigned to one or more users"));
+
+        mockMvc.perform(delete("/api/v1/roles/" + roleId))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Cannot delete role because it is currently assigned to one or more users"));
+    }
 }
+

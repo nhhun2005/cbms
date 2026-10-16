@@ -18,4 +18,6 @@ public interface RoleService {
     ApiResponse<RoleResponse> assignPermissionsToRole(UUID roleId, AssignPermissionsRequest request);
     ApiResponse<RoleResponse> assignPermissionToRole(UUID roleId, UUID permissionId);
     ApiResponse<RoleResponse> removePermissionFromRole(UUID roleId, UUID permissionId);
+    ApiResponse<Void> deleteRole(UUID id);
 }
+

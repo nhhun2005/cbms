@@ -51,6 +51,14 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
+    @ExceptionHandler(UserAlreadyActiveException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUserAlreadyActive(UserAlreadyActiveException ex){
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+
     @ExceptionHandler(PermissionAlreadyExistsException.class)
     public ResponseEntity<ApiResponse<Void>> handlePermissionAlreadyExists(PermissionAlreadyExistsException ex) {
         return ResponseEntity
@@ -64,6 +72,21 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.CONFLICT)
                 .body(ApiResponse.error(ex.getMessage()));
     }
+
+    @ExceptionHandler(RoleInUseException.class)
+    public ResponseEntity<ApiResponse<Void>> handleRoleInUse(RoleInUseException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(PermissionInUseException.class)
+    public ResponseEntity<ApiResponse<Void>> handlePermissionInUse(PermissionInUseException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
 
     @ExceptionHandler(PermissionNotExistsException.class)
     public ResponseEntity<ApiResponse<Void>> handlePermissionNotExists(PermissionNotExistsException ex) {

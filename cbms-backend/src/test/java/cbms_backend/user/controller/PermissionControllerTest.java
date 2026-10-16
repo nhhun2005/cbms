@@ -22,6 +22,7 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -100,4 +101,28 @@ class PermissionControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Permission does not exist"));
     }
+
+    @Test
+    void deletePermission_shouldReturn200_whenSuccessful() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        when(permissionService.deletePermission(id)).thenReturn(ApiResponse.success("Permission deleted successfully"));
+
+        mockMvc.perform(delete("/api/v1/permissions/" + id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Permission deleted successfully"));
+    }
+
+    @Test
+    void deletePermission_shouldReturn409_whenInUse() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        when(permissionService.deletePermission(id))
+                .thenThrow(new cbms_backend.core.exception.PermissionInUseException("Cannot delete permission because it is currently assigned to one or more roles"));
+
+        mockMvc.perform(delete("/api/v1/permissions/" + id))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Cannot delete permission because it is currently assigned to one or more roles"));
+    }
 }
+
