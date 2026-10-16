@@ -4,6 +4,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import java.util.Set;
+import java.util.UUID;
+
 public record CreateAccountRequest(
         @NotBlank(message = "Name must not be blank")
         @Size(min=2, max=50, message = "Name must contain 02-50 characters")
@@ -15,7 +18,12 @@ public record CreateAccountRequest(
 
         @NotBlank(message ="Password must not be blank")
         @Size(min=6, max=50, message = "Password must contain 02-50 characters")
-        String password
+        String password,
 
+        Set<UUID> roleIds
 ) {
+    public CreateAccountRequest(String name, String phone, String password) {
+        this(name, phone, password, null);
+    }
 }
+
