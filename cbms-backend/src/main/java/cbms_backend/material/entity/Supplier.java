@@ -2,6 +2,7 @@ package cbms_backend.material.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,10 +23,12 @@ public class Supplier {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @NotBlank
+    @NotBlank(message = "Supplier name must not be blank")
+    @Size(max = 100, message = "Supplier name must not exceed 100 characters")
     @Column(nullable = false, length = 100)
     private String name;
 
+    @Size(max = 100, message = "Contact must not exceed 100 characters")
     @Column(length = 100)
     private String contact;
 

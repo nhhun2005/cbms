@@ -4,6 +4,7 @@ import cbms_backend.customer.entity.CustomerAddress;
 import cbms_backend.customer.entity.CustomerInformation;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,6 +29,7 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @NotNull(message = "Customer must not be null")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", nullable = false)
     private CustomerInformation customer;
@@ -36,10 +38,12 @@ public class Order {
     @JoinColumn(name = "customer_address_id")
     private CustomerAddress customerAddress;
 
+    @NotNull(message = "Order status must not be null")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private OrderStatus status = OrderStatus.ORDERED;
 
+    @NotNull(message = "Created at must not be null")
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();

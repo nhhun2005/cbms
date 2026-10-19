@@ -26,6 +26,8 @@ import cbms_backend.order.repository.OrderRepository;
 import cbms_backend.user.entity.User;
 import cbms_backend.user.entity.UserStatus;
 import cbms_backend.user.repository.UserRepository;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +35,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,6 +43,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @Transactional
 class CurtainBusinessEntitiesTest {
+
+    @Autowired
+    private Validator validator;
 
     @Autowired
     private CustomerInformationRepository customerInformationRepository;
@@ -203,4 +209,75 @@ class CurtainBusinessEntitiesTest {
         assertThat(savedInvoice.getOrder().getId()).isEqualTo(savedOrder.getId());
         assertThat(savedInvoice.getCustomer().getId()).isEqualTo(savedCustomer.getId());
     }
+
+    @Test
+    @DisplayName("Should detect invalid Vietnamese phone number format for CustomerInformation")
+    void testCustomerPhoneValidation() {
+        CustomerInformation customer = new CustomerInformation();
+        customer.setName("Nguyen Van A");
+        customer.setGender(Gender.MALE);
+
+        // Invalid: does not start with 0 or wrong length
+        customer.setPhone("12345");
+        Set<ConstraintViolation<CustomerInformation>> violations = validator.validate(customer);
+        assertThat(violations).isNotEmpty();
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("phone"));
+
+        // Invalid: contains letters
+        customer.setPhone("098765432a");
+        violations = validator.validate(customer);
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("phone"));
+
+        // Invalid: 11 digits
+        customer.setPhone("09876543210");
+        violations = validator.validate(customer);
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("phone"));
+
+        // Valid: 10 digits starting with 0
+        customer.setPhone("0987654321");
+        violations = validator.validate(customer);
+        assertThat(violations).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Should detect invalid fields in Material")
+    void testMaterialValidation() {
+        Material material = new Material();
+        material.setName(""); // Blank
+        material.setUnit("meter");
+        material.setQuantity(-5.0); // Negative quantity
+
+        Set<ConstraintViolation<Material>> violations = validator.validate(material);
+        assertThat(violations).hasSize(2);
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("name"));
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("quantity"));
+    }
+
+    @Test
+    @DisplayName("Should detect invalid dimensions in Curtain")
+    void testCurtainValidation() {
+        Curtain curtain = new Curtain();
+        curtain.setWidth(0.0); // Not positive
+        curtain.setHeight(-1.5); // Negative
+
+        Set<ConstraintViolation<Curtain>> violations = validator.validate(curtain);
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("width"));
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("height"));
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("order"));
+    }
+
+    @Test
+    @DisplayName("Should detect invalid amounts in Invoice")
+    void testInvoiceValidation() {
+        Invoice invoice = new Invoice();
+        invoice.setSubtotal(-100.0);
+        invoice.setTaxRate(-0.05);
+        invoice.setTotal(-105.0);
+
+        Set<ConstraintViolation<Invoice>> violations = validator.validate(invoice);
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("subtotal"));
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("taxRate"));
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("total"));
+    }
 }
+

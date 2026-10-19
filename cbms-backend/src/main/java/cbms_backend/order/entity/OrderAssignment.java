@@ -2,6 +2,7 @@ package cbms_backend.order.entity;
 
 import cbms_backend.user.entity.User;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,18 +25,22 @@ public class OrderAssignment {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @NotNull(message = "Order must not be null")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
+    @NotNull(message = "User must not be null")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @NotNull(message = "Role must not be null")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private AssignmentRole role;
 
+    @NotNull(message = "Assigned at must not be null")
     @CreationTimestamp
     @Column(name = "assigned_at", nullable = false, updatable = false)
     private Instant assignedAt = Instant.now();

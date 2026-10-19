@@ -2,6 +2,8 @@ package cbms_backend.material.entity;
 
 import cbms_backend.order.entity.Order;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,6 +26,7 @@ public class StockMovement {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @NotNull(message = "Material must not be null")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "material_id", nullable = false)
     private Material material;
@@ -36,13 +39,17 @@ public class StockMovement {
     @JoinColumn(name = "order_id")
     private Order order;
 
+    @NotNull(message = "Stock movement type must not be null")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private StockMovementType type;
 
+    @NotNull(message = "Quantity must not be null")
+    @Positive(message = "Quantity must be greater than 0")
     @Column(nullable = false)
     private Double quantity;
 
+    @NotNull(message = "Created at must not be null")
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();

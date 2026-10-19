@@ -1,6 +1,8 @@
 package cbms_backend.order.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,13 +23,18 @@ public class Curtain {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @NotNull(message = "Order must not be null")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
+    @NotNull(message = "Width must not be null")
+    @Positive(message = "Width must be greater than 0")
     @Column(nullable = false)
     private Double width;
 
+    @NotNull(message = "Height must not be null")
+    @Positive(message = "Height must be greater than 0")
     @Column(nullable = false)
     private Double height;
 

@@ -3,6 +3,9 @@ package cbms_backend.customer.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,7 +28,8 @@ public class CustomerInformation {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @NotBlank
+    @NotBlank(message = "Customer name must not be blank")
+    @Size(min = 2, max = 100, message = "Customer name must be between 2 and 100 characters")
     @Column(nullable = false, length = 100)
     private String name;
 
@@ -33,10 +37,13 @@ public class CustomerInformation {
     @Column(length = 20)
     private Gender gender;
 
+    @Size(max = 255, message = "Address must not exceed 255 characters")
     @Column
     private String address;
 
-    @NotBlank
+    @NotBlank(message = "Phone must not be blank")
+    @Size(min = 10, max = 10, message = "Phone must contain 10 digits")
+    @Pattern(regexp = "0\\d{9}", message = "Phone must be a valid Vietnamese phone number")
     @Column(nullable = false, unique = true, length = 20)
     private String phone;
 
