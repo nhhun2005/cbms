@@ -122,6 +122,20 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.GONE)
                 .body(ApiResponse.error(ex.getMessage()));
     }
+
+    @ExceptionHandler(CustomerAlreadyExistsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleCustomerAlreadyExists(CustomerAlreadyExistsException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(CustomerNotExistsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleCustomerNotExists(CustomerNotExistsException ex) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
 }
 
 
