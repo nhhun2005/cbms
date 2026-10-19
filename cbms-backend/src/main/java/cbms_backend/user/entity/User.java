@@ -49,6 +49,11 @@ public class User {
     )
     private Set<Role> roles = new HashSet<>();
 
+    @OneToMany(mappedBy = "user")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Set<cbms_backend.order.entity.OrderAssignment> orderAssignments = new HashSet<>();
+
+
     public void addRole(Role role) {
         if (roles == null) {
             roles = new HashSet<>();
