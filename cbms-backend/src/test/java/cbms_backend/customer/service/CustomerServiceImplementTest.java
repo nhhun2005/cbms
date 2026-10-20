@@ -1,5 +1,7 @@
 package cbms_backend.customer.service;
 
+import cbms_backend.core.exception.CustomerAddressAlreadyInactiveException;
+import cbms_backend.core.exception.CustomerAddressNotExistsException;
 import cbms_backend.core.exception.CustomerAlreadyExistsException;
 import cbms_backend.core.exception.CustomerNotExistsException;
 import cbms_backend.core.util.ApiResponse;
@@ -7,6 +9,7 @@ import cbms_backend.customer.dto.create_address.CreateCustomerAddressRequest;
 import cbms_backend.customer.dto.create_customer.CreateCustomerRequest;
 import cbms_backend.customer.dto.get_customer.CustomerAddressResponse;
 import cbms_backend.customer.dto.get_customer.CustomerResponse;
+import cbms_backend.customer.dto.update_address.UpdateCustomerAddressRequest;
 import cbms_backend.customer.dto.update_customer.UpdateCustomerRequest;
 import cbms_backend.customer.entity.AddressType;
 import cbms_backend.customer.entity.CustomerAddress;
@@ -284,8 +287,7 @@ class CustomerServiceImplementTest {
                 AddressType.RESIDENTIAL,
                 "123 Duong 3/2, Can Tho",
                 10.0299,
-                105.7706,
-                true
+                105.7706
         );
 
         when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
@@ -347,75 +349,14 @@ class CustomerServiceImplementTest {
     }
 
     @Test
-    @DisplayName("Should default isActive to true when isActive is null")
-    void addCustomerAddress_shouldDefaultIsActiveToTrue_whenIsActiveNull() {
-        UUID customerId = UUID.randomUUID();
-        CustomerInformation customer = new CustomerInformation();
-        customer.setId(customerId);
-        customer.setName("Nguyen Van A");
-        customer.setPhone("0987654321");
-
-        CreateCustomerAddressRequest request = new CreateCustomerAddressRequest(
-                AddressType.RESIDENTIAL,
-                "123 Duong 3/2, Can Tho",
-                10.0299,
-                105.7706,
-                null
-        );
-
-        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
-        when(customerAddressRepository.save(any(CustomerAddress.class))).thenAnswer(invocation -> {
-            CustomerAddress addr = invocation.getArgument(0);
-            addr.setId(UUID.randomUUID());
-            return addr;
-        });
-
-        ApiResponse<CustomerAddressResponse> response = customerService.addCustomerAddress(customerId, request);
-
-        assertNotNull(response);
-        assertTrue(response.getData().isActive());
-    }
-
-    @Test
-    @DisplayName("Should respect isActive false when explicitly provided")
-    void addCustomerAddress_shouldRespectIsActiveFalse_whenExplicitlyProvided() {
-        UUID customerId = UUID.randomUUID();
-        CustomerInformation customer = new CustomerInformation();
-        customer.setId(customerId);
-        customer.setName("Nguyen Van A");
-        customer.setPhone("0987654321");
-
-        CreateCustomerAddressRequest request = new CreateCustomerAddressRequest(
-                AddressType.RESIDENTIAL,
-                "Old address, Can Tho",
-                10.0299,
-                105.7706,
-                false
-        );
-
-        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
-        when(customerAddressRepository.save(any(CustomerAddress.class))).thenAnswer(invocation -> {
-            CustomerAddress addr = invocation.getArgument(0);
-            addr.setId(UUID.randomUUID());
-            return addr;
-        });
-
-        ApiResponse<CustomerAddressResponse> response = customerService.addCustomerAddress(customerId, request);
-
-        assertNotNull(response);
-        assertFalse(response.getData().isActive());
-    }
-
-    @Test
-    @DisplayName("Should throw CustomerNotExistsException when customer not found")
+    @DisplayName("Should throw CustomerNotExistsException when adding address to non-existent customer")
     void addCustomerAddress_shouldThrowCustomerNotExistsException_whenCustomerNotFound() {
         UUID customerId = UUID.randomUUID();
         CreateCustomerAddressRequest request = new CreateCustomerAddressRequest(
                 AddressType.RESIDENTIAL,
                 "123 Duong 3/2, Can Tho",
                 10.0299,
-                105.7706,
-                true
+                105.7706
         );
 
         when(customerRepository.findById(customerId)).thenReturn(Optional.empty());
@@ -425,5 +366,247 @@ class CustomerServiceImplementTest {
                 () -> customerService.addCustomerAddress(customerId, request)
         );
         verify(customerAddressRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should update customer address successfully when valid data provided")
+    void updateCustomerAddress_shouldUpdateAddressSuccessfully_whenValidDataProvided() {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        CustomerInformation customer = new CustomerInformation();
+        customer.setId(customerId);
+
+        CustomerAddress existingAddress = new CustomerAddress();
+        existingAddress.setId(addressId);
+        existingAddress.setCustomer(customer);
+        existingAddress.setType(AddressType.RESIDENTIAL);
+        existingAddress.setAddress("Old Address");
+        existingAddress.setIsActive(true);
+
+        UpdateCustomerAddressRequest request = new UpdateCustomerAddressRequest(
+                AddressType.OFFICE,
+                "New Updated Address",
+                10.1234,
+                105.5678
+        );
+
+        when(customerRepository.existsById(customerId)).thenReturn(true);
+        when(customerAddressRepository.findByIdAndCustomerId(addressId, customerId)).thenReturn(Optional.of(existingAddress));
+        when(customerAddressRepository.save(any(CustomerAddress.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ApiResponse<CustomerAddressResponse> response = customerService.updateCustomerAddress(customerId, addressId, request);
+
+        assertNotNull(response);
+        assertEquals("Customer address updated successfully", response.getMessage());
+        assertEquals(AddressType.OFFICE, response.getData().type());
+        assertEquals("New Updated Address", response.getData().address());
+        assertEquals(10.1234, response.getData().latitude());
+        assertEquals(105.5678, response.getData().longitude());
+        assertTrue(response.getData().isActive());
+    }
+
+    @Test
+    @DisplayName("Should throw CustomerNotExistsException when updating address of non-existent customer")
+    void updateCustomerAddress_shouldThrowCustomerNotExistsException_whenCustomerNotFound() {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        UpdateCustomerAddressRequest request = new UpdateCustomerAddressRequest(
+                AddressType.OFFICE,
+                "New Address"
+        );
+
+        when(customerRepository.existsById(customerId)).thenReturn(false);
+
+        assertThrows(
+                CustomerNotExistsException.class,
+                () -> customerService.updateCustomerAddress(customerId, addressId, request)
+        );
+        verify(customerAddressRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should throw CustomerAddressNotExistsException when updating non-existent address")
+    void updateCustomerAddress_shouldThrowCustomerAddressNotExistsException_whenAddressNotFound() {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        UpdateCustomerAddressRequest request = new UpdateCustomerAddressRequest(
+                AddressType.OFFICE,
+                "New Address"
+        );
+
+        when(customerRepository.existsById(customerId)).thenReturn(true);
+        when(customerAddressRepository.findByIdAndCustomerId(addressId, customerId)).thenReturn(Optional.empty());
+
+        assertThrows(
+                CustomerAddressNotExistsException.class,
+                () -> customerService.updateCustomerAddress(customerId, addressId, request)
+        );
+        verify(customerAddressRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should disable customer address successfully when currently active")
+    void disableCustomerAddress_shouldDisableAddressSuccessfully_whenActive() {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        CustomerInformation customer = new CustomerInformation();
+        customer.setId(customerId);
+
+        CustomerAddress existingAddress = new CustomerAddress();
+        existingAddress.setId(addressId);
+        existingAddress.setCustomer(customer);
+        existingAddress.setType(AddressType.RESIDENTIAL);
+        existingAddress.setAddress("Active Address");
+        existingAddress.setIsActive(true);
+
+        when(customerRepository.existsById(customerId)).thenReturn(true);
+        when(customerAddressRepository.findByIdAndCustomerId(addressId, customerId)).thenReturn(Optional.of(existingAddress));
+        when(customerAddressRepository.save(any(CustomerAddress.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ApiResponse<CustomerAddressResponse> response = customerService.disableCustomerAddress(customerId, addressId);
+
+        assertNotNull(response);
+        assertEquals("Customer address disabled successfully", response.getMessage());
+        assertFalse(response.getData().isActive());
+        verify(customerAddressRepository).save(existingAddress);
+    }
+
+    @Test
+    @DisplayName("Should throw CustomerAddressAlreadyInactiveException when disabling already inactive address")
+    void disableCustomerAddress_shouldThrowCustomerAddressAlreadyInactiveException_whenAlreadyInactive() {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        CustomerInformation customer = new CustomerInformation();
+        customer.setId(customerId);
+
+        CustomerAddress existingAddress = new CustomerAddress();
+        existingAddress.setId(addressId);
+        existingAddress.setCustomer(customer);
+        existingAddress.setIsActive(false);
+
+        when(customerRepository.existsById(customerId)).thenReturn(true);
+        when(customerAddressRepository.findByIdAndCustomerId(addressId, customerId)).thenReturn(Optional.of(existingAddress));
+
+        assertThrows(
+                CustomerAddressAlreadyInactiveException.class,
+                () -> customerService.disableCustomerAddress(customerId, addressId)
+        );
+        verify(customerAddressRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should throw CustomerNotExistsException when disabling address of non-existent customer")
+    void disableCustomerAddress_shouldThrowCustomerNotExistsException_whenCustomerNotFound() {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        when(customerRepository.existsById(customerId)).thenReturn(false);
+
+        assertThrows(
+                CustomerNotExistsException.class,
+                () -> customerService.disableCustomerAddress(customerId, addressId)
+        );
+        verify(customerAddressRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should throw CustomerAddressNotExistsException when disabling non-existent address")
+    void disableCustomerAddress_shouldThrowCustomerAddressNotExistsException_whenAddressNotFound() {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        when(customerRepository.existsById(customerId)).thenReturn(true);
+        when(customerAddressRepository.findByIdAndCustomerId(addressId, customerId)).thenReturn(Optional.empty());
+
+        assertThrows(
+                CustomerAddressNotExistsException.class,
+                () -> customerService.disableCustomerAddress(customerId, addressId)
+        );
+        verify(customerAddressRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should delete customer successfully when customer exists")
+    void deleteCustomer_shouldDeleteSuccessfully_whenCustomerExists() {
+        UUID customerId = UUID.randomUUID();
+        CustomerInformation customer = new CustomerInformation();
+        customer.setId(customerId);
+
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+
+        ApiResponse<Void> response = customerService.deleteCustomer(customerId);
+
+        assertNotNull(response);
+        assertEquals("Customer deleted successfully", response.getMessage());
+        verify(customerRepository).delete(customer);
+    }
+
+    @Test
+    @DisplayName("Should throw CustomerNotExistsException when deleting non-existent customer")
+    void deleteCustomer_shouldThrowCustomerNotExistsException_whenCustomerNotFound() {
+        UUID customerId = UUID.randomUUID();
+
+        when(customerRepository.findById(customerId)).thenReturn(Optional.empty());
+
+        assertThrows(
+                CustomerNotExistsException.class,
+                () -> customerService.deleteCustomer(customerId)
+        );
+        verify(customerRepository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("Should delete customer address successfully when address exists")
+    void deleteCustomerAddress_shouldDeleteSuccessfully_whenAddressExists() {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        CustomerAddress address = new CustomerAddress();
+        address.setId(addressId);
+
+        when(customerRepository.existsById(customerId)).thenReturn(true);
+        when(customerAddressRepository.findByIdAndCustomerId(addressId, customerId)).thenReturn(Optional.of(address));
+
+        ApiResponse<Void> response = customerService.deleteCustomerAddress(customerId, addressId);
+
+        assertNotNull(response);
+        assertEquals("Customer address deleted successfully", response.getMessage());
+        verify(customerAddressRepository).delete(address);
+    }
+
+    @Test
+    @DisplayName("Should throw CustomerNotExistsException when deleting address of non-existent customer")
+    void deleteCustomerAddress_shouldThrowCustomerNotExistsException_whenCustomerNotFound() {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        when(customerRepository.existsById(customerId)).thenReturn(false);
+
+        assertThrows(
+                CustomerNotExistsException.class,
+                () -> customerService.deleteCustomerAddress(customerId, addressId)
+        );
+        verify(customerAddressRepository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("Should throw CustomerAddressNotExistsException when deleting non-existent address")
+    void deleteCustomerAddress_shouldThrowCustomerAddressNotExistsException_whenAddressNotFound() {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        when(customerRepository.existsById(customerId)).thenReturn(true);
+        when(customerAddressRepository.findByIdAndCustomerId(addressId, customerId)).thenReturn(Optional.empty());
+
+        assertThrows(
+                CustomerAddressNotExistsException.class,
+                () -> customerService.deleteCustomerAddress(customerId, addressId)
+        );
+        verify(customerAddressRepository, never()).delete(any());
     }
 }

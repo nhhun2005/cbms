@@ -1,5 +1,7 @@
 package cbms_backend.customer.service;
 
+import cbms_backend.core.exception.CustomerAddressAlreadyInactiveException;
+import cbms_backend.core.exception.CustomerAddressNotExistsException;
 import cbms_backend.core.exception.CustomerAlreadyExistsException;
 import cbms_backend.core.exception.CustomerNotExistsException;
 import cbms_backend.core.util.ApiResponse;
@@ -7,6 +9,7 @@ import cbms_backend.customer.dto.create_address.CreateCustomerAddressRequest;
 import cbms_backend.customer.dto.create_customer.CreateCustomerRequest;
 import cbms_backend.customer.dto.get_customer.CustomerAddressResponse;
 import cbms_backend.customer.dto.get_customer.CustomerResponse;
+import cbms_backend.customer.dto.update_address.UpdateCustomerAddressRequest;
 import cbms_backend.customer.dto.update_customer.UpdateCustomerRequest;
 import cbms_backend.customer.entity.CustomerAddress;
 import cbms_backend.customer.entity.CustomerInformation;
@@ -104,10 +107,72 @@ public class CustomerServiceImplement implements CustomerService {
         address.setAddress(request.address().trim());
         address.setLatitude(request.latitude());
         address.setLongitude(request.longitude());
-        address.setIsActive(request.resolveIsActive());
+        address.setIsActive(true);
 
         customer.addAddress(address);
         CustomerAddress saved = customerAddressRepository.save(address);
         return ApiResponse.success(CustomerAddressResponse.fromEntity(saved), "Customer address added successfully");
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<CustomerAddressResponse> updateCustomerAddress(UUID customerId, UUID addressId, UpdateCustomerAddressRequest request) {
+        if (!customerRepository.existsById(customerId)) {
+            throw new CustomerNotExistsException("Customer does not exist");
+        }
+
+        CustomerAddress address = customerAddressRepository.findByIdAndCustomerId(addressId, customerId)
+                .orElseThrow(() -> new CustomerAddressNotExistsException("Customer address does not exist"));
+
+        address.setType(request.type());
+        address.setAddress(request.address().trim());
+        address.setLatitude(request.latitude());
+        address.setLongitude(request.longitude());
+
+        CustomerAddress updated = customerAddressRepository.save(address);
+        return ApiResponse.success(CustomerAddressResponse.fromEntity(updated), "Customer address updated successfully");
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<CustomerAddressResponse> disableCustomerAddress(UUID customerId, UUID addressId) {
+        if (!customerRepository.existsById(customerId)) {
+            throw new CustomerNotExistsException("Customer does not exist");
+        }
+
+        CustomerAddress address = customerAddressRepository.findByIdAndCustomerId(addressId, customerId)
+                .orElseThrow(() -> new CustomerAddressNotExistsException("Customer address does not exist"));
+
+        if (Boolean.FALSE.equals(address.getIsActive())) {
+            throw new CustomerAddressAlreadyInactiveException("Customer address is already inactive");
+        }
+
+        address.setIsActive(false);
+        CustomerAddress saved = customerAddressRepository.save(address);
+        return ApiResponse.success(CustomerAddressResponse.fromEntity(saved), "Customer address disabled successfully");
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<Void> deleteCustomer(UUID id) {
+        CustomerInformation customer = customerRepository.findById(id)
+                .orElseThrow(() -> new CustomerNotExistsException("Customer does not exist"));
+
+        customerRepository.delete(customer);
+        return ApiResponse.success("Customer deleted successfully");
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<Void> deleteCustomerAddress(UUID customerId, UUID addressId) {
+        if (!customerRepository.existsById(customerId)) {
+            throw new CustomerNotExistsException("Customer does not exist");
+        }
+
+        CustomerAddress address = customerAddressRepository.findByIdAndCustomerId(addressId, customerId)
+                .orElseThrow(() -> new CustomerAddressNotExistsException("Customer address does not exist"));
+
+        customerAddressRepository.delete(address);
+        return ApiResponse.success("Customer address deleted successfully");
     }
 }

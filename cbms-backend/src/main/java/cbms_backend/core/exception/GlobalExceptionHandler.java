@@ -136,6 +136,20 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error(ex.getMessage()));
     }
+
+    @ExceptionHandler(CustomerAddressAlreadyInactiveException.class)
+    public ResponseEntity<ApiResponse<Void>> handleCustomerAddressAlreadyInactive(CustomerAddressAlreadyInactiveException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(CustomerAddressNotExistsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleCustomerAddressNotExists(CustomerAddressNotExistsException ex) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
 }
 
 

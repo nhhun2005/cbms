@@ -22,24 +22,14 @@ public record CreateCustomerAddressRequest(
 
         @DecimalMin(value = "-180.0", message = "Longitude must be between -180 and 180")
         @DecimalMax(value = "180.0", message = "Longitude must be between -180 and 180")
-        Double longitude,
-
-        Boolean isActive
+        Double longitude
 ) {
-    public CreateCustomerAddressRequest(AddressType type, String address, Double latitude, Double longitude) {
-        this(type, address, latitude, longitude, true);
-    }
-
     public CreateCustomerAddressRequest(AddressType type, String address) {
-        this(type, address, null, null, true);
+        this(type, address, null, null);
     }
 
     @AssertTrue(message = "Both latitude and longitude must be provided together")
     public boolean isCoordinatePairValid() {
         return (latitude == null && longitude == null) || (latitude != null && longitude != null);
-    }
-
-    public boolean resolveIsActive() {
-        return isActive == null || isActive;
     }
 }

@@ -89,4 +89,9 @@ public class UserController {
     ) {
         return ResponseEntity.ok(service.removeRoleFromUser(userId, roleId));
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.deleteUser(id));
+    }
 }

@@ -180,5 +180,27 @@ class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("User enabled successfully"));
     }
+
+    @Test
+    void deleteUser_shouldReturn200() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        when(userService.deleteUser(id)).thenReturn(ApiResponse.success("User deleted successfully"));
+
+        mockMvc.perform(delete("/api/v1/users/" + id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("User deleted successfully"));
+    }
+
+    @Test
+    void deleteUser_shouldReturn404_whenUserNotFound() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        when(userService.deleteUser(id)).thenThrow(new UserNotExistsException("User does not exist"));
+
+        mockMvc.perform(delete("/api/v1/users/" + id))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("User does not exist"));
+    }
 }
 

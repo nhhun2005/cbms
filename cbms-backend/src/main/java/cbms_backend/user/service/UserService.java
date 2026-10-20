@@ -22,6 +22,7 @@ public interface UserService {
     ApiResponse<GetUserResponse> assignRolesToUser(UUID id, AssignRolesRequest request);
     ApiResponse<GetUserResponse> assignRoleToUser(UUID userId, UUID roleId);
     ApiResponse<GetUserResponse> removeRoleFromUser(UUID userId, UUID roleId);
+    ApiResponse<Void> deleteUser(UUID id);
 }
 
 

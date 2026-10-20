@@ -196,4 +196,15 @@ public class UserServiceImplement implements UserService {
         User updated = repository.save(user);
         return ApiResponse.success(GetUserResponse.fromEntity(updated), "Role removed from user successfully");
     }
+
+    @Override
+    @Transactional
+    public ApiResponse<Void> deleteUser(UUID id) {
+        User user = repository.findById(id)
+                .orElseThrow(() -> new UserNotExistsException("User does not exist"));
+
+        user.getRoles().clear();
+        repository.delete(user);
+        return ApiResponse.success("User deleted successfully");
+    }
 }

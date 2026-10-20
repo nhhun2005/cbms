@@ -413,4 +413,29 @@ class UserServiceImplementTest {
         assertNull(response.getData().roles());
         verify(repository).save(user);
     }
+
+    @Test
+    void deleteUser_shouldDeleteSuccessfully_whenUserExists() {
+        UUID id = UUID.randomUUID();
+        User user = new User();
+        user.setId(id);
+
+        when(repository.findById(id)).thenReturn(Optional.of(user));
+
+        ApiResponse<Void> response = service.deleteUser(id);
+
+        assertNotNull(response);
+        assertEquals("User deleted successfully", response.getMessage());
+        verify(repository).delete(user);
+    }
+
+    @Test
+    void deleteUser_shouldThrowException_whenUserNotFound() {
+        UUID id = UUID.randomUUID();
+
+        when(repository.findById(id)).thenReturn(Optional.empty());
+
+        assertThrows(UserNotExistsException.class, () -> service.deleteUser(id));
+        verify(repository, never()).delete(any(User.class));
+    }
 }

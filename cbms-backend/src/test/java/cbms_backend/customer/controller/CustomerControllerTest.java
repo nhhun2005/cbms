@@ -1,5 +1,7 @@
 package cbms_backend.customer.controller;
 
+import cbms_backend.core.exception.CustomerAddressAlreadyInactiveException;
+import cbms_backend.core.exception.CustomerAddressNotExistsException;
 import cbms_backend.core.exception.CustomerAlreadyExistsException;
 import cbms_backend.core.exception.CustomerNotExistsException;
 import cbms_backend.core.exception.GlobalExceptionHandler;
@@ -8,6 +10,7 @@ import cbms_backend.customer.dto.create_address.CreateCustomerAddressRequest;
 import cbms_backend.customer.dto.create_customer.CreateCustomerRequest;
 import cbms_backend.customer.dto.get_customer.CustomerAddressResponse;
 import cbms_backend.customer.dto.get_customer.CustomerResponse;
+import cbms_backend.customer.dto.update_address.UpdateCustomerAddressRequest;
 import cbms_backend.customer.dto.update_customer.UpdateCustomerRequest;
 import cbms_backend.customer.entity.AddressType;
 import cbms_backend.customer.entity.Gender;
@@ -263,7 +266,7 @@ class CustomerControllerTest {
 
         mockMvc.perform(post("/api/v1/customers/{customerId}/addresses", customerId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"type\": \"RESIDENTIAL\", \"address\": \"123 Duong 3/2, Can Tho\", \"latitude\": 10.0299, \"longitude\": 105.7706, \"isActive\": true}"))
+                        .content("{\"type\": \"RESIDENTIAL\", \"address\": \"123 Duong 3/2, Can Tho\", \"latitude\": 10.0299, \"longitude\": 105.7706}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.message").value("Customer address added successfully"))
                 .andExpect(jsonPath("$.data.id").value(addressId.toString()))
@@ -375,5 +378,279 @@ class CustomerControllerTest {
                         .content("{\"type\": \"RESIDENTIAL\", \"address\": \"123 Duong 3/2\", \"latitude\": 10.0}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Both latitude and longitude must be provided together"));
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/customers/{customerId}/addresses/{addressId} should return 200 when valid request with coordinates")
+    void updateCustomerAddress_shouldReturn200_whenValidWithCoordinates() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+        CustomerAddressResponse response = new CustomerAddressResponse(
+                addressId,
+                customerId,
+                AddressType.OFFICE,
+                "New Address, Can Tho",
+                10.1234,
+                105.5678,
+                true
+        );
+
+        when(customerService.updateCustomerAddress(eq(customerId), eq(addressId), any(UpdateCustomerAddressRequest.class)))
+                .thenReturn(ApiResponse.success(response, "Customer address updated successfully"));
+
+        mockMvc.perform(put("/api/v1/customers/{customerId}/addresses/{addressId}", customerId, addressId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"type\": \"OFFICE\", \"address\": \"New Address, Can Tho\", \"latitude\": 10.1234, \"longitude\": 105.5678}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Customer address updated successfully"))
+                .andExpect(jsonPath("$.data.id").value(addressId.toString()))
+                .andExpect(jsonPath("$.data.type").value("OFFICE"))
+                .andExpect(jsonPath("$.data.address").value("New Address, Can Tho"))
+                .andExpect(jsonPath("$.data.latitude").value(10.1234))
+                .andExpect(jsonPath("$.data.longitude").value(105.5678));
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/customers/{customerId}/addresses/{addressId} should return 200 when coordinates omitted")
+    void updateCustomerAddress_shouldReturn200_whenCoordinatesOmitted() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+        CustomerAddressResponse response = new CustomerAddressResponse(
+                addressId,
+                customerId,
+                AddressType.RESIDENTIAL,
+                "New Address Without Coords",
+                null,
+                null,
+                true
+        );
+
+        when(customerService.updateCustomerAddress(eq(customerId), eq(addressId), any(UpdateCustomerAddressRequest.class)))
+                .thenReturn(ApiResponse.success(response, "Customer address updated successfully"));
+
+        mockMvc.perform(put("/api/v1/customers/{customerId}/addresses/{addressId}", customerId, addressId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"type\": \"RESIDENTIAL\", \"address\": \"New Address Without Coords\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Customer address updated successfully"))
+                .andExpect(jsonPath("$.data.latitude").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/customers/{customerId}/addresses/{addressId} should return 400 when address is blank")
+    void updateCustomerAddress_shouldReturn400_whenAddressIsBlank() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        mockMvc.perform(put("/api/v1/customers/{customerId}/addresses/{addressId}", customerId, addressId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"type\": \"RESIDENTIAL\", \"address\": \"\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/customers/{customerId}/addresses/{addressId} should return 400 when latitude exceeds range")
+    void updateCustomerAddress_shouldReturn400_whenLatitudeExceedsRange() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        mockMvc.perform(put("/api/v1/customers/{customerId}/addresses/{addressId}", customerId, addressId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"type\": \"RESIDENTIAL\", \"address\": \"Valid address\", \"latitude\": 95.0, \"longitude\": 100.0}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Latitude must be between -90 and 90"));
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/customers/{customerId}/addresses/{addressId} should return 400 when longitude exceeds range")
+    void updateCustomerAddress_shouldReturn400_whenLongitudeExceedsRange() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        mockMvc.perform(put("/api/v1/customers/{customerId}/addresses/{addressId}", customerId, addressId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"type\": \"RESIDENTIAL\", \"address\": \"Valid address\", \"latitude\": 10.0, \"longitude\": 185.0}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Longitude must be between -180 and 180"));
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/customers/{customerId}/addresses/{addressId} should return 400 when only latitude provided")
+    void updateCustomerAddress_shouldReturn400_whenOnlyLatitudeProvided() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        mockMvc.perform(put("/api/v1/customers/{customerId}/addresses/{addressId}", customerId, addressId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"type\": \"RESIDENTIAL\", \"address\": \"Valid address\", \"latitude\": 10.0}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Both latitude and longitude must be provided together"));
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/customers/{customerId}/addresses/{addressId} should return 404 when customer not found")
+    void updateCustomerAddress_shouldReturn404_whenCustomerNotFound() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        when(customerService.updateCustomerAddress(eq(customerId), eq(addressId), any(UpdateCustomerAddressRequest.class)))
+                .thenThrow(new CustomerNotExistsException("Customer does not exist"));
+
+        mockMvc.perform(put("/api/v1/customers/{customerId}/addresses/{addressId}", customerId, addressId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"type\": \"RESIDENTIAL\", \"address\": \"Valid address\"}"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Customer does not exist"));
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/customers/{customerId}/addresses/{addressId} should return 404 when address not found")
+    void updateCustomerAddress_shouldReturn404_whenAddressNotFound() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        when(customerService.updateCustomerAddress(eq(customerId), eq(addressId), any(UpdateCustomerAddressRequest.class)))
+                .thenThrow(new CustomerAddressNotExistsException("Customer address does not exist"));
+
+        mockMvc.perform(put("/api/v1/customers/{customerId}/addresses/{addressId}", customerId, addressId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"type\": \"RESIDENTIAL\", \"address\": \"Valid address\"}"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Customer address does not exist"));
+    }
+
+    @Test
+    @DisplayName("PATCH /api/v1/customers/{customerId}/addresses/{addressId}/disable should return 200 when disabled successfully")
+    void disableCustomerAddress_shouldReturn200_whenDisabledSuccessfully() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+        CustomerAddressResponse response = new CustomerAddressResponse(
+                addressId,
+                customerId,
+                AddressType.RESIDENTIAL,
+                "Address, Can Tho",
+                10.0,
+                105.0,
+                false
+        );
+
+        when(customerService.disableCustomerAddress(customerId, addressId))
+                .thenReturn(ApiResponse.success(response, "Customer address disabled successfully"));
+
+        mockMvc.perform(patch("/api/v1/customers/{customerId}/addresses/{addressId}/disable", customerId, addressId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Customer address disabled successfully"))
+                .andExpect(jsonPath("$.data.id").value(addressId.toString()))
+                .andExpect(jsonPath("$.data.isActive").value(false));
+    }
+
+    @Test
+    @DisplayName("PATCH /api/v1/customers/{customerId}/addresses/{addressId}/disable should return 404 when customer not found")
+    void disableCustomerAddress_shouldReturn404_whenCustomerNotFound() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        when(customerService.disableCustomerAddress(customerId, addressId))
+                .thenThrow(new CustomerNotExistsException("Customer does not exist"));
+
+        mockMvc.perform(patch("/api/v1/customers/{customerId}/addresses/{addressId}/disable", customerId, addressId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Customer does not exist"));
+    }
+
+    @Test
+    @DisplayName("PATCH /api/v1/customers/{customerId}/addresses/{addressId}/disable should return 404 when address not found")
+    void disableCustomerAddress_shouldReturn404_whenAddressNotFound() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        when(customerService.disableCustomerAddress(customerId, addressId))
+                .thenThrow(new CustomerAddressNotExistsException("Customer address does not exist"));
+
+        mockMvc.perform(patch("/api/v1/customers/{customerId}/addresses/{addressId}/disable", customerId, addressId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Customer address does not exist"));
+    }
+
+    @Test
+    @DisplayName("PATCH /api/v1/customers/{customerId}/addresses/{addressId}/disable should return 409 when address is already inactive")
+    void disableCustomerAddress_shouldReturn409_whenAlreadyInactive() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        when(customerService.disableCustomerAddress(customerId, addressId))
+                .thenThrow(new CustomerAddressAlreadyInactiveException("Customer address is already inactive"));
+
+        mockMvc.perform(patch("/api/v1/customers/{customerId}/addresses/{addressId}/disable", customerId, addressId))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Customer address is already inactive"));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/v1/customers/{id} should return 200 when customer exists")
+    void deleteCustomer_shouldReturn200_whenCustomerExists() throws Exception {
+        UUID customerId = UUID.randomUUID();
+
+        when(customerService.deleteCustomer(customerId))
+                .thenReturn(ApiResponse.success("Customer deleted successfully"));
+
+        mockMvc.perform(delete("/api/v1/customers/{id}", customerId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Customer deleted successfully"));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/v1/customers/{id} should return 404 when customer not found")
+    void deleteCustomer_shouldReturn404_whenCustomerNotFound() throws Exception {
+        UUID customerId = UUID.randomUUID();
+
+        when(customerService.deleteCustomer(customerId))
+                .thenThrow(new CustomerNotExistsException("Customer does not exist"));
+
+        mockMvc.perform(delete("/api/v1/customers/{id}", customerId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Customer does not exist"));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/v1/customers/{customerId}/addresses/{addressId} should return 200 when address exists")
+    void deleteCustomerAddress_shouldReturn200_whenAddressExists() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        when(customerService.deleteCustomerAddress(customerId, addressId))
+                .thenReturn(ApiResponse.success("Customer address deleted successfully"));
+
+        mockMvc.perform(delete("/api/v1/customers/{customerId}/addresses/{addressId}", customerId, addressId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Customer address deleted successfully"));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/v1/customers/{customerId}/addresses/{addressId} should return 404 when customer not found")
+    void deleteCustomerAddress_shouldReturn404_whenCustomerNotFound() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        when(customerService.deleteCustomerAddress(customerId, addressId))
+                .thenThrow(new CustomerNotExistsException("Customer does not exist"));
+
+        mockMvc.perform(delete("/api/v1/customers/{customerId}/addresses/{addressId}", customerId, addressId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Customer does not exist"));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/v1/customers/{customerId}/addresses/{addressId} should return 404 when address not found")
+    void deleteCustomerAddress_shouldReturn404_whenAddressNotFound() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        when(customerService.deleteCustomerAddress(customerId, addressId))
+                .thenThrow(new CustomerAddressNotExistsException("Customer address does not exist"));
+
+        mockMvc.perform(delete("/api/v1/customers/{customerId}/addresses/{addressId}", customerId, addressId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Customer address does not exist"));
     }
 }
