@@ -3,11 +3,16 @@ package cbms_backend.customer.service;
 import cbms_backend.core.exception.CustomerAlreadyExistsException;
 import cbms_backend.core.exception.CustomerNotExistsException;
 import cbms_backend.core.util.ApiResponse;
+import cbms_backend.customer.dto.create_address.CreateCustomerAddressRequest;
 import cbms_backend.customer.dto.create_customer.CreateCustomerRequest;
+import cbms_backend.customer.dto.get_customer.CustomerAddressResponse;
 import cbms_backend.customer.dto.get_customer.CustomerResponse;
 import cbms_backend.customer.dto.update_customer.UpdateCustomerRequest;
+import cbms_backend.customer.entity.AddressType;
+import cbms_backend.customer.entity.CustomerAddress;
 import cbms_backend.customer.entity.CustomerInformation;
 import cbms_backend.customer.entity.Gender;
+import cbms_backend.customer.repository.CustomerAddressRepository;
 import cbms_backend.customer.repository.CustomerInformationRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,6 +35,9 @@ class CustomerServiceImplementTest {
 
     @Mock
     private CustomerInformationRepository customerRepository;
+
+    @Mock
+    private CustomerAddressRepository customerAddressRepository;
 
     @InjectMocks
     private CustomerServiceImplement customerService;
@@ -261,5 +269,161 @@ class CustomerServiceImplementTest {
         assertNotNull(response);
         assertEquals("Customers retrieved successfully", response.getMessage());
         assertEquals(2, response.getData().size());
+    }
+
+    @Test
+    @DisplayName("Should add customer address successfully when valid data with coordinates provided")
+    void addCustomerAddress_shouldAddAddressSuccessfully_whenValidDataWithCoordinates() {
+        UUID customerId = UUID.randomUUID();
+        CustomerInformation customer = new CustomerInformation();
+        customer.setId(customerId);
+        customer.setName("Nguyen Van A");
+        customer.setPhone("0987654321");
+
+        CreateCustomerAddressRequest request = new CreateCustomerAddressRequest(
+                AddressType.RESIDENTIAL,
+                "123 Duong 3/2, Can Tho",
+                10.0299,
+                105.7706,
+                true
+        );
+
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(customerAddressRepository.save(any(CustomerAddress.class))).thenAnswer(invocation -> {
+            CustomerAddress addr = invocation.getArgument(0);
+            addr.setId(UUID.randomUUID());
+            return addr;
+        });
+
+        ApiResponse<CustomerAddressResponse> response = customerService.addCustomerAddress(customerId, request);
+
+        assertNotNull(response);
+        assertEquals("Customer address added successfully", response.getMessage());
+        assertNotNull(response.getData());
+        assertNotNull(response.getData().id());
+        assertEquals(customerId, response.getData().customerId());
+        assertEquals(AddressType.RESIDENTIAL, response.getData().type());
+        assertEquals("123 Duong 3/2, Can Tho", response.getData().address());
+        assertEquals(10.0299, response.getData().latitude());
+        assertEquals(105.7706, response.getData().longitude());
+        assertTrue(response.getData().isActive());
+
+        verify(customerRepository).findById(customerId);
+        verify(customerAddressRepository).save(any(CustomerAddress.class));
+    }
+
+    @Test
+    @DisplayName("Should add customer address successfully when coordinates are null")
+    void addCustomerAddress_shouldAddAddressSuccessfully_whenCoordinatesAreNull() {
+        UUID customerId = UUID.randomUUID();
+        CustomerInformation customer = new CustomerInformation();
+        customer.setId(customerId);
+        customer.setName("Nguyen Van A");
+        customer.setPhone("0987654321");
+
+        CreateCustomerAddressRequest request = new CreateCustomerAddressRequest(
+                AddressType.OFFICE,
+                "456 CMT8, Can Tho"
+        );
+
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(customerAddressRepository.save(any(CustomerAddress.class))).thenAnswer(invocation -> {
+            CustomerAddress addr = invocation.getArgument(0);
+            addr.setId(UUID.randomUUID());
+            return addr;
+        });
+
+        ApiResponse<CustomerAddressResponse> response = customerService.addCustomerAddress(customerId, request);
+
+        assertNotNull(response);
+        assertEquals("Customer address added successfully", response.getMessage());
+        assertNotNull(response.getData());
+        assertEquals(customerId, response.getData().customerId());
+        assertEquals(AddressType.OFFICE, response.getData().type());
+        assertEquals("456 CMT8, Can Tho", response.getData().address());
+        assertNull(response.getData().latitude());
+        assertNull(response.getData().longitude());
+        assertTrue(response.getData().isActive());
+    }
+
+    @Test
+    @DisplayName("Should default isActive to true when isActive is null")
+    void addCustomerAddress_shouldDefaultIsActiveToTrue_whenIsActiveNull() {
+        UUID customerId = UUID.randomUUID();
+        CustomerInformation customer = new CustomerInformation();
+        customer.setId(customerId);
+        customer.setName("Nguyen Van A");
+        customer.setPhone("0987654321");
+
+        CreateCustomerAddressRequest request = new CreateCustomerAddressRequest(
+                AddressType.RESIDENTIAL,
+                "123 Duong 3/2, Can Tho",
+                10.0299,
+                105.7706,
+                null
+        );
+
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(customerAddressRepository.save(any(CustomerAddress.class))).thenAnswer(invocation -> {
+            CustomerAddress addr = invocation.getArgument(0);
+            addr.setId(UUID.randomUUID());
+            return addr;
+        });
+
+        ApiResponse<CustomerAddressResponse> response = customerService.addCustomerAddress(customerId, request);
+
+        assertNotNull(response);
+        assertTrue(response.getData().isActive());
+    }
+
+    @Test
+    @DisplayName("Should respect isActive false when explicitly provided")
+    void addCustomerAddress_shouldRespectIsActiveFalse_whenExplicitlyProvided() {
+        UUID customerId = UUID.randomUUID();
+        CustomerInformation customer = new CustomerInformation();
+        customer.setId(customerId);
+        customer.setName("Nguyen Van A");
+        customer.setPhone("0987654321");
+
+        CreateCustomerAddressRequest request = new CreateCustomerAddressRequest(
+                AddressType.RESIDENTIAL,
+                "Old address, Can Tho",
+                10.0299,
+                105.7706,
+                false
+        );
+
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(customerAddressRepository.save(any(CustomerAddress.class))).thenAnswer(invocation -> {
+            CustomerAddress addr = invocation.getArgument(0);
+            addr.setId(UUID.randomUUID());
+            return addr;
+        });
+
+        ApiResponse<CustomerAddressResponse> response = customerService.addCustomerAddress(customerId, request);
+
+        assertNotNull(response);
+        assertFalse(response.getData().isActive());
+    }
+
+    @Test
+    @DisplayName("Should throw CustomerNotExistsException when customer not found")
+    void addCustomerAddress_shouldThrowCustomerNotExistsException_whenCustomerNotFound() {
+        UUID customerId = UUID.randomUUID();
+        CreateCustomerAddressRequest request = new CreateCustomerAddressRequest(
+                AddressType.RESIDENTIAL,
+                "123 Duong 3/2, Can Tho",
+                10.0299,
+                105.7706,
+                true
+        );
+
+        when(customerRepository.findById(customerId)).thenReturn(Optional.empty());
+
+        assertThrows(
+                CustomerNotExistsException.class,
+                () -> customerService.addCustomerAddress(customerId, request)
+        );
+        verify(customerAddressRepository, never()).save(any());
     }
 }

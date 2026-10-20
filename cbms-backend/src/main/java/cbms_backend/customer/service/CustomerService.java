@@ -1,7 +1,9 @@
 package cbms_backend.customer.service;
 
 import cbms_backend.core.util.ApiResponse;
+import cbms_backend.customer.dto.create_address.CreateCustomerAddressRequest;
 import cbms_backend.customer.dto.create_customer.CreateCustomerRequest;
+import cbms_backend.customer.dto.get_customer.CustomerAddressResponse;
 import cbms_backend.customer.dto.get_customer.CustomerResponse;
 import cbms_backend.customer.dto.update_customer.UpdateCustomerRequest;
 
@@ -14,4 +16,5 @@ public interface CustomerService {
     ApiResponse<CustomerResponse> getCustomerById(UUID id);
     ApiResponse<CustomerResponse> getCustomerByPhone(String phone);
     ApiResponse<List<CustomerResponse>> getAllCustomers();
+    ApiResponse<CustomerAddressResponse> addCustomerAddress(UUID customerId, CreateCustomerAddressRequest request);
 }

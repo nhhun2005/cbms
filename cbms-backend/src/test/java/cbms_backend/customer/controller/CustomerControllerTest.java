@@ -4,9 +4,12 @@ import cbms_backend.core.exception.CustomerAlreadyExistsException;
 import cbms_backend.core.exception.CustomerNotExistsException;
 import cbms_backend.core.exception.GlobalExceptionHandler;
 import cbms_backend.core.util.ApiResponse;
+import cbms_backend.customer.dto.create_address.CreateCustomerAddressRequest;
 import cbms_backend.customer.dto.create_customer.CreateCustomerRequest;
+import cbms_backend.customer.dto.get_customer.CustomerAddressResponse;
 import cbms_backend.customer.dto.get_customer.CustomerResponse;
 import cbms_backend.customer.dto.update_customer.UpdateCustomerRequest;
+import cbms_backend.customer.entity.AddressType;
 import cbms_backend.customer.entity.Gender;
 import cbms_backend.customer.service.CustomerService;
 import org.junit.jupiter.api.BeforeEach;
@@ -238,5 +241,139 @@ class CustomerControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Customers retrieved successfully"))
                 .andExpect(jsonPath("$.data[0].name").value("Nguyen Van A"));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/customers/{customerId}/addresses should return 201 when valid request with coordinates")
+    void addCustomerAddress_shouldReturn201_whenValidWithCoordinates() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+        CustomerAddressResponse response = new CustomerAddressResponse(
+                addressId,
+                customerId,
+                AddressType.RESIDENTIAL,
+                "123 Duong 3/2, Can Tho",
+                10.0299,
+                105.7706,
+                true
+        );
+
+        when(customerService.addCustomerAddress(eq(customerId), any(CreateCustomerAddressRequest.class)))
+                .thenReturn(ApiResponse.success(response, "Customer address added successfully"));
+
+        mockMvc.perform(post("/api/v1/customers/{customerId}/addresses", customerId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"type\": \"RESIDENTIAL\", \"address\": \"123 Duong 3/2, Can Tho\", \"latitude\": 10.0299, \"longitude\": 105.7706, \"isActive\": true}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.message").value("Customer address added successfully"))
+                .andExpect(jsonPath("$.data.id").value(addressId.toString()))
+                .andExpect(jsonPath("$.data.customerId").value(customerId.toString()))
+                .andExpect(jsonPath("$.data.type").value("RESIDENTIAL"))
+                .andExpect(jsonPath("$.data.address").value("123 Duong 3/2, Can Tho"))
+                .andExpect(jsonPath("$.data.latitude").value(10.0299))
+                .andExpect(jsonPath("$.data.longitude").value(105.7706))
+                .andExpect(jsonPath("$.data.isActive").value(true));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/customers/{customerId}/addresses should return 201 when coordinates are omitted")
+    void addCustomerAddress_shouldReturn201_whenCoordinatesOmitted() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+        CustomerAddressResponse response = new CustomerAddressResponse(
+                addressId,
+                customerId,
+                AddressType.OFFICE,
+                "456 CMT8, Can Tho",
+                null,
+                null,
+                true
+        );
+
+        when(customerService.addCustomerAddress(eq(customerId), any(CreateCustomerAddressRequest.class)))
+                .thenReturn(ApiResponse.success(response, "Customer address added successfully"));
+
+        mockMvc.perform(post("/api/v1/customers/{customerId}/addresses", customerId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"type\": \"OFFICE\", \"address\": \"456 CMT8, Can Tho\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.message").value("Customer address added successfully"))
+                .andExpect(jsonPath("$.data.type").value("OFFICE"))
+                .andExpect(jsonPath("$.data.latitude").doesNotExist())
+                .andExpect(jsonPath("$.data.longitude").doesNotExist())
+                .andExpect(jsonPath("$.data.isActive").value(true));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/customers/{customerId}/addresses should return 404 when customer not found")
+    void addCustomerAddress_shouldReturn404_whenCustomerNotFound() throws Exception {
+        UUID customerId = UUID.randomUUID();
+
+        when(customerService.addCustomerAddress(eq(customerId), any(CreateCustomerAddressRequest.class)))
+                .thenThrow(new CustomerNotExistsException("Customer does not exist"));
+
+        mockMvc.perform(post("/api/v1/customers/{customerId}/addresses", customerId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"type\": \"RESIDENTIAL\", \"address\": \"123 Duong 3/2, Can Tho\"}"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Customer does not exist"));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/customers/{customerId}/addresses should return 400 when address is blank")
+    void addCustomerAddress_shouldReturn400_whenAddressIsBlank() throws Exception {
+        UUID customerId = UUID.randomUUID();
+
+        mockMvc.perform(post("/api/v1/customers/{customerId}/addresses", customerId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"type\": \"RESIDENTIAL\", \"address\": \"\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/customers/{customerId}/addresses should return 400 when type is null")
+    void addCustomerAddress_shouldReturn400_whenTypeIsNull() throws Exception {
+        UUID customerId = UUID.randomUUID();
+
+        mockMvc.perform(post("/api/v1/customers/{customerId}/addresses", customerId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"address\": \"123 Duong 3/2, Can Tho\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/customers/{customerId}/addresses should return 400 when latitude exceeds Google Maps range (> 90)")
+    void addCustomerAddress_shouldReturn400_whenLatitudeExceedsRange() throws Exception {
+        UUID customerId = UUID.randomUUID();
+
+        mockMvc.perform(post("/api/v1/customers/{customerId}/addresses", customerId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"type\": \"RESIDENTIAL\", \"address\": \"123 Duong 3/2\", \"latitude\": 95.0, \"longitude\": 105.0}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Latitude must be between -90 and 90"));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/customers/{customerId}/addresses should return 400 when longitude exceeds Google Maps range (> 180)")
+    void addCustomerAddress_shouldReturn400_whenLongitudeExceedsRange() throws Exception {
+        UUID customerId = UUID.randomUUID();
+
+        mockMvc.perform(post("/api/v1/customers/{customerId}/addresses", customerId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"type\": \"RESIDENTIAL\", \"address\": \"123 Duong 3/2\", \"latitude\": 10.0, \"longitude\": 185.0}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Longitude must be between -180 and 180"));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/customers/{customerId}/addresses should return 400 when only latitude is provided without longitude")
+    void addCustomerAddress_shouldReturn400_whenOnlyLatitudeProvided() throws Exception {
+        UUID customerId = UUID.randomUUID();
+
+        mockMvc.perform(post("/api/v1/customers/{customerId}/addresses", customerId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"type\": \"RESIDENTIAL\", \"address\": \"123 Duong 3/2\", \"latitude\": 10.0}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Both latitude and longitude must be provided together"));
     }
 }

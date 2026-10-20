@@ -1,7 +1,9 @@
 package cbms_backend.customer.controller;
 
 import cbms_backend.core.util.ApiResponse;
+import cbms_backend.customer.dto.create_address.CreateCustomerAddressRequest;
 import cbms_backend.customer.dto.create_customer.CreateCustomerRequest;
+import cbms_backend.customer.dto.get_customer.CustomerAddressResponse;
 import cbms_backend.customer.dto.get_customer.CustomerResponse;
 import cbms_backend.customer.dto.update_customer.UpdateCustomerRequest;
 import cbms_backend.customer.service.CustomerService;
@@ -28,6 +30,16 @@ public class CustomerController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(customerService.createCustomer(request));
+    }
+
+    @PostMapping("/{customerId}/addresses")
+    public ResponseEntity<ApiResponse<CustomerAddressResponse>> addCustomerAddress(
+            @PathVariable UUID customerId,
+            @Valid @RequestBody CreateCustomerAddressRequest request
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(customerService.addCustomerAddress(customerId, request));
     }
 
     @PutMapping("/{id}")
