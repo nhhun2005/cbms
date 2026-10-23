@@ -2,6 +2,7 @@ package cbms_backend.material.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -28,9 +29,19 @@ public class Supplier {
     @Column(nullable = false, length = 100)
     private String name;
 
+    @NotBlank(message = "Contact must not be blank")
     @Size(max = 100, message = "Contact must not exceed 100 characters")
-    @Column(length = 100)
+    @Pattern(
+            regexp = "^([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}|0\\d{9})$",
+            message = "Contact must be a valid email or Vietnamese phone number"
+    )
+    @Column(nullable = false, length = 100)
     private String contact;
+
+    public Supplier(String name, String contact) {
+        this.name = name;
+        this.contact = contact;
+    }
 
     @Override
     public boolean equals(Object o) {

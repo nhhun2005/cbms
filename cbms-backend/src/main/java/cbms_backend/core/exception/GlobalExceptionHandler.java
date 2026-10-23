@@ -171,6 +171,41 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.CONFLICT)
                 .body(ApiResponse.error(ex.getMessage()));
     }
+
+    @ExceptionHandler(SupplierAlreadyExistsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleSupplierAlreadyExists(SupplierAlreadyExistsException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(SupplierNotExistsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleSupplierNotExists(SupplierNotExistsException ex) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(SupplierInUseException.class)
+    public ResponseEntity<ApiResponse<Void>> handleSupplierInUse(SupplierInUseException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(StockMovementNotExistsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleStockMovementNotExists(StockMovementNotExistsException ex) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(CannotDeleteStockMovementException.class)
+    public ResponseEntity<ApiResponse<Void>> handleCannotDeleteStockMovement(CannotDeleteStockMovementException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
 }
 
 

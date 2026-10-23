@@ -10,4 +10,6 @@ import java.util.UUID;
 @Repository
 public interface SupplierRepository extends JpaRepository<Supplier, UUID> {
     Optional<Supplier> findByName(String name);
+    boolean existsByName(String name);
+    boolean existsByNameAndIdNot(String name, UUID id);
 }
