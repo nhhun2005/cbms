@@ -20,6 +20,7 @@ public interface CustomerService {
     ApiResponse<CustomerAddressResponse> addCustomerAddress(UUID customerId, CreateCustomerAddressRequest request);
     ApiResponse<CustomerAddressResponse> updateCustomerAddress(UUID customerId, UUID addressId, UpdateCustomerAddressRequest request);
     ApiResponse<CustomerAddressResponse> disableCustomerAddress(UUID customerId, UUID addressId);
+    ApiResponse<CustomerAddressResponse> enableCustomerAddress(UUID customerId, UUID addressId);
     ApiResponse<Void> deleteCustomer(UUID id);
     ApiResponse<Void> deleteCustomerAddress(UUID customerId, UUID addressId);
 }

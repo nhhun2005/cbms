@@ -1,5 +1,6 @@
 package cbms_backend.customer.controller;
 
+import cbms_backend.core.exception.CustomerAddressAlreadyActiveException;
 import cbms_backend.core.exception.CustomerAddressAlreadyInactiveException;
 import cbms_backend.core.exception.CustomerAddressNotExistsException;
 import cbms_backend.core.exception.CustomerAlreadyExistsException;
@@ -584,6 +585,73 @@ class CustomerControllerTest {
         mockMvc.perform(patch("/api/v1/customers/{customerId}/addresses/{addressId}/disable", customerId, addressId))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("Customer address is already inactive"));
+    }
+
+    @Test
+    @DisplayName("PATCH /api/v1/customers/{customerId}/addresses/{addressId}/enable should return 200 when enabled successfully")
+    void enableCustomerAddress_shouldReturn200_whenEnabledSuccessfully() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+        CustomerAddressResponse response = new CustomerAddressResponse(
+                addressId,
+                customerId,
+                AddressType.RESIDENTIAL,
+                "Address, Can Tho",
+                10.0,
+                105.0,
+                true
+        );
+
+        when(customerService.enableCustomerAddress(customerId, addressId))
+                .thenReturn(ApiResponse.success(response, "Customer address enabled successfully"));
+
+        mockMvc.perform(patch("/api/v1/customers/{customerId}/addresses/{addressId}/enable", customerId, addressId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Customer address enabled successfully"))
+                .andExpect(jsonPath("$.data.id").value(addressId.toString()))
+                .andExpect(jsonPath("$.data.isActive").value(true));
+    }
+
+    @Test
+    @DisplayName("PATCH /api/v1/customers/{customerId}/addresses/{addressId}/enable should return 404 when customer not found")
+    void enableCustomerAddress_shouldReturn404_whenCustomerNotFound() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        when(customerService.enableCustomerAddress(customerId, addressId))
+                .thenThrow(new CustomerNotExistsException("Customer does not exist"));
+
+        mockMvc.perform(patch("/api/v1/customers/{customerId}/addresses/{addressId}/enable", customerId, addressId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Customer does not exist"));
+    }
+
+    @Test
+    @DisplayName("PATCH /api/v1/customers/{customerId}/addresses/{addressId}/enable should return 404 when address not found")
+    void enableCustomerAddress_shouldReturn404_whenAddressNotFound() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        when(customerService.enableCustomerAddress(customerId, addressId))
+                .thenThrow(new CustomerAddressNotExistsException("Customer address does not exist"));
+
+        mockMvc.perform(patch("/api/v1/customers/{customerId}/addresses/{addressId}/enable", customerId, addressId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Customer address does not exist"));
+    }
+
+    @Test
+    @DisplayName("PATCH /api/v1/customers/{customerId}/addresses/{addressId}/enable should return 409 when address is already active")
+    void enableCustomerAddress_shouldReturn409_whenAlreadyActive() throws Exception {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        when(customerService.enableCustomerAddress(customerId, addressId))
+                .thenThrow(new CustomerAddressAlreadyActiveException("Customer address is already active"));
+
+        mockMvc.perform(patch("/api/v1/customers/{customerId}/addresses/{addressId}/enable", customerId, addressId))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Customer address is already active"));
     }
 
     @Test

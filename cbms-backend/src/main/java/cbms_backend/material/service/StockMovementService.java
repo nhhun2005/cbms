@@ -2,6 +2,7 @@ package cbms_backend.material.service;
 
 import cbms_backend.core.util.ApiResponse;
 import cbms_backend.material.dto.create_stock_in.CreateStockInRequest;
+import cbms_backend.material.dto.create_stock_out.CreateStockOutRequest;
 import cbms_backend.material.dto.get_stock_movement.StockMovementResponse;
 import cbms_backend.material.dto.get_stock_movement.WarehouseStockSummaryResponse;
 import cbms_backend.material.entity.StockMovementType;
@@ -12,6 +13,7 @@ import java.util.UUID;
 
 public interface StockMovementService {
     ApiResponse<StockMovementResponse> recordStockIn(CreateStockInRequest request);
+    ApiResponse<StockMovementResponse> recordStockOut(CreateStockOutRequest request);
     ApiResponse<StockMovementResponse> getStockMovementById(UUID id);
     ApiResponse<List<StockMovementResponse>> getAllStockMovements();
     ApiResponse<List<StockMovementResponse>> getStockMovementsByMaterialId(UUID materialId);

@@ -60,6 +60,14 @@ public class CustomerController {
         return ResponseEntity.ok(customerService.disableCustomerAddress(customerId, addressId));
     }
 
+    @PatchMapping("/{customerId}/addresses/{addressId}/enable")
+    public ResponseEntity<ApiResponse<CustomerAddressResponse>> enableCustomerAddress(
+            @PathVariable UUID customerId,
+            @PathVariable UUID addressId
+    ) {
+        return ResponseEntity.ok(customerService.enableCustomerAddress(customerId, addressId));
+    }
+
     @DeleteMapping("/{customerId}/addresses/{addressId}")
     public ResponseEntity<ApiResponse<Void>> deleteCustomerAddress(
             @PathVariable UUID customerId,

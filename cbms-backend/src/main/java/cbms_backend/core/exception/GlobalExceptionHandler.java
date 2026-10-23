@@ -144,6 +144,13 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
+    @ExceptionHandler(CustomerAddressAlreadyActiveException.class)
+    public ResponseEntity<ApiResponse<Void>> handleCustomerAddressAlreadyActive(CustomerAddressAlreadyActiveException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
     @ExceptionHandler(CustomerAddressNotExistsException.class)
     public ResponseEntity<ApiResponse<Void>> handleCustomerAddressNotExists(CustomerAddressNotExistsException ex) {
         return ResponseEntity
@@ -202,6 +209,69 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CannotDeleteStockMovementException.class)
     public ResponseEntity<ApiResponse<Void>> handleCannotDeleteStockMovement(CannotDeleteStockMovementException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(OrderNotExistsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleOrderNotExists(OrderNotExistsException ex) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(CurtainNotExistsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleCurtainNotExists(CurtainNotExistsException ex) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(OrderAssignmentNotExistsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleOrderAssignmentNotExists(OrderAssignmentNotExistsException ex) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(OrderAssignmentAlreadyExistsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleOrderAssignmentAlreadyExists(OrderAssignmentAlreadyExistsException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(CannotModifyCurtainException.class)
+    public ResponseEntity<ApiResponse<Void>> handleCannotModifyCurtain(CannotModifyCurtainException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(CannotDeleteLastCurtainException.class)
+    public ResponseEntity<ApiResponse<Void>> handleCannotDeleteLastCurtain(CannotDeleteLastCurtainException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(CannotModifyCreatorAssignmentException.class)
+    public ResponseEntity<ApiResponse<Void>> handleCannotModifyCreatorAssignment(CannotModifyCreatorAssignmentException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(CannotDeleteOrderException.class)
+    public ResponseEntity<ApiResponse<Void>> handleCannotDeleteOrder(CannotDeleteOrderException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(InsufficientStockException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInsufficientStock(InsufficientStockException ex) {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(ex.getMessage()));

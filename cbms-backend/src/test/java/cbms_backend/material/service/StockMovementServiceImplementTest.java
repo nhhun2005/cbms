@@ -1,11 +1,9 @@
 package cbms_backend.material.service;
 
-import cbms_backend.core.exception.CannotDeleteStockMovementException;
-import cbms_backend.core.exception.MaterialNotExistsException;
-import cbms_backend.core.exception.StockMovementNotExistsException;
-import cbms_backend.core.exception.SupplierNotExistsException;
+import cbms_backend.core.exception.*;
 import cbms_backend.core.util.ApiResponse;
 import cbms_backend.material.dto.create_stock_in.CreateStockInRequest;
+import cbms_backend.material.dto.create_stock_out.CreateStockOutRequest;
 import cbms_backend.material.dto.get_stock_movement.StockMovementResponse;
 import cbms_backend.material.entity.Material;
 import cbms_backend.material.entity.StockMovement;
@@ -14,6 +12,8 @@ import cbms_backend.material.entity.Supplier;
 import cbms_backend.material.repository.MaterialRepository;
 import cbms_backend.material.repository.StockMovementRepository;
 import cbms_backend.material.repository.SupplierRepository;
+import cbms_backend.order.entity.Order;
+import cbms_backend.order.repository.OrderRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,6 +43,9 @@ class StockMovementServiceImplementTest {
 
     @Mock
     private SupplierRepository supplierRepository;
+
+    @Mock
+    private OrderRepository orderRepository;
 
     @InjectMocks
     private StockMovementServiceImplement stockMovementService;
@@ -409,24 +412,110 @@ class StockMovementServiceImplementTest {
     }
 
     @Test
-    @DisplayName("deleteStockMovement should throw CannotDeleteStockMovementException when type is OUT")
-    void deleteStockMovement_shouldThrow_whenTypeIsOUT() {
+    @DisplayName("deleteStockMovement should restore material quantity when type is OUT")
+    void deleteStockMovement_shouldRestoreQuantity_whenTypeIsOUT() {
         UUID id = UUID.randomUUID();
+        Material material = new Material();
+        material.setId(UUID.randomUUID());
+        material.setQuantity(40.0);
+
         StockMovement movement = new StockMovement();
         movement.setId(id);
+        movement.setMaterial(material);
         movement.setType(StockMovementType.OUT);
-        movement.setQuantity(10.0);
+        movement.setQuantity(15.0);
 
         when(stockMovementRepository.findById(id)).thenReturn(Optional.of(movement));
 
-        CannotDeleteStockMovementException ex = assertThrows(
-                CannotDeleteStockMovementException.class,
-                () -> stockMovementService.deleteStockMovement(id)
-        );
+        ApiResponse<Void> response = stockMovementService.deleteStockMovement(id);
 
-        assertTrue(ex.getMessage().contains("Deleting stock-out movements is not supported yet"));
+        assertNotNull(response);
+        assertEquals("Stock movement deleted successfully", response.getMessage());
+        assertEquals(55.0, material.getQuantity());
+        verify(materialRepository).save(material);
+        verify(stockMovementRepository).delete(movement);
+    }
+
+    @Test
+    @DisplayName("recordStockOut should decrease material quantity and create OUT movement")
+    void recordStockOut_shouldSucceed_andDecreaseMaterialQuantity() {
+        UUID materialId = UUID.randomUUID();
+        UUID orderId = UUID.randomUUID();
+
+        Material material = new Material();
+        material.setId(materialId);
+        material.setQuantity(50.0);
+
+        Order order = new Order();
+        order.setId(orderId);
+
+        when(materialRepository.findById(materialId)).thenReturn(Optional.of(material));
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(invocation -> {
+            StockMovement sm = invocation.getArgument(0);
+            sm.setId(UUID.randomUUID());
+            return sm;
+        });
+
+        CreateStockOutRequest request = new CreateStockOutRequest(materialId, orderId, 20.0);
+        ApiResponse<StockMovementResponse> response = stockMovementService.recordStockOut(request);
+
+        assertNotNull(response);
+        assertEquals("Stock out recorded successfully", response.getMessage());
+        assertEquals(30.0, material.getQuantity());
+        verify(materialRepository).save(material);
+        verify(stockMovementRepository).save(any(StockMovement.class));
+    }
+
+    @Test
+    @DisplayName("recordStockOut should throw InsufficientStockException when available is less than requested")
+    void recordStockOut_shouldThrow_whenInsufficientStock() {
+        UUID materialId = UUID.randomUUID();
+        UUID orderId = UUID.randomUUID();
+
+        Material material = new Material();
+        material.setId(materialId);
+        material.setQuantity(10.0);
+
+        Order order = new Order();
+        order.setId(orderId);
+
+        when(materialRepository.findById(materialId)).thenReturn(Optional.of(material));
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+        CreateStockOutRequest request = new CreateStockOutRequest(materialId, orderId, 25.0);
+        assertThrows(InsufficientStockException.class, () -> stockMovementService.recordStockOut(request));
         verify(materialRepository, never()).save(any());
-        verify(stockMovementRepository, never()).delete(any());
+        verify(stockMovementRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("recordStockOut should throw MaterialNotExistsException when material not found")
+    void recordStockOut_shouldThrow_whenMaterialNotFound() {
+        UUID materialId = UUID.randomUUID();
+        UUID orderId = UUID.randomUUID();
+
+        when(materialRepository.findById(materialId)).thenReturn(Optional.empty());
+
+        CreateStockOutRequest request = new CreateStockOutRequest(materialId, orderId, 10.0);
+        assertThrows(MaterialNotExistsException.class, () -> stockMovementService.recordStockOut(request));
+    }
+
+    @Test
+    @DisplayName("recordStockOut should throw OrderNotExistsException when order not found")
+    void recordStockOut_shouldThrow_whenOrderNotFound() {
+        UUID materialId = UUID.randomUUID();
+        UUID orderId = UUID.randomUUID();
+
+        Material material = new Material();
+        material.setId(materialId);
+        material.setQuantity(100.0);
+
+        when(materialRepository.findById(materialId)).thenReturn(Optional.of(material));
+        when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
+
+        CreateStockOutRequest request = new CreateStockOutRequest(materialId, orderId, 10.0);
+        assertThrows(OrderNotExistsException.class, () -> stockMovementService.recordStockOut(request));
     }
 
     @Test

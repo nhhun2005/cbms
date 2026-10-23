@@ -1,5 +1,6 @@
 package cbms_backend.customer.service;
 
+import cbms_backend.core.exception.CustomerAddressAlreadyActiveException;
 import cbms_backend.core.exception.CustomerAddressAlreadyInactiveException;
 import cbms_backend.core.exception.CustomerAddressNotExistsException;
 import cbms_backend.core.exception.CustomerAlreadyExistsException;
@@ -150,6 +151,25 @@ public class CustomerServiceImplement implements CustomerService {
         address.setIsActive(false);
         CustomerAddress saved = customerAddressRepository.save(address);
         return ApiResponse.success(CustomerAddressResponse.fromEntity(saved), "Customer address disabled successfully");
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<CustomerAddressResponse> enableCustomerAddress(UUID customerId, UUID addressId) {
+        if (!customerRepository.existsById(customerId)) {
+            throw new CustomerNotExistsException("Customer does not exist");
+        }
+
+        CustomerAddress address = customerAddressRepository.findByIdAndCustomerId(addressId, customerId)
+                .orElseThrow(() -> new CustomerAddressNotExistsException("Customer address does not exist"));
+
+        if (Boolean.TRUE.equals(address.getIsActive())) {
+            throw new CustomerAddressAlreadyActiveException("Customer address is already active");
+        }
+
+        address.setIsActive(true);
+        CustomerAddress saved = customerAddressRepository.save(address);
+        return ApiResponse.success(CustomerAddressResponse.fromEntity(saved), "Customer address enabled successfully");
     }
 
     @Override

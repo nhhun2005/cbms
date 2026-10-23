@@ -19,6 +19,7 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, UU
     List<StockMovement> findByType(StockMovementType type);
     boolean existsByMaterialId(UUID materialId);
     boolean existsBySupplierId(UUID supplierId);
+    boolean existsByOrderId(UUID orderId);
 
     @Query("SELECT sm FROM StockMovement sm LEFT JOIN FETCH sm.material LEFT JOIN FETCH sm.supplier LEFT JOIN FETCH sm.order WHERE sm.id = :id")
     Optional<StockMovement> findByIdWithDetails(@Param("id") UUID id);

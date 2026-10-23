@@ -2,6 +2,7 @@ package cbms_backend.material.controller;
 
 import cbms_backend.core.util.ApiResponse;
 import cbms_backend.material.dto.create_stock_in.CreateStockInRequest;
+import cbms_backend.material.dto.create_stock_out.CreateStockOutRequest;
 import cbms_backend.material.dto.get_stock_movement.StockMovementResponse;
 import cbms_backend.material.dto.get_stock_movement.WarehouseStockSummaryResponse;
 import cbms_backend.material.entity.StockMovementType;
@@ -31,6 +32,15 @@ public class StockMovementController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(stockMovementService.recordStockIn(request));
+    }
+
+    @PostMapping("/out")
+    public ResponseEntity<ApiResponse<StockMovementResponse>> recordStockOut(
+            @Valid @RequestBody CreateStockOutRequest request
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(stockMovementService.recordStockOut(request));
     }
 
     @GetMapping(value = {"", "/history", "/warehouse/history"})

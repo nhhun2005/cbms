@@ -1,11 +1,9 @@
 package cbms_backend.material.service;
 
-import cbms_backend.core.exception.CannotDeleteStockMovementException;
-import cbms_backend.core.exception.MaterialNotExistsException;
-import cbms_backend.core.exception.StockMovementNotExistsException;
-import cbms_backend.core.exception.SupplierNotExistsException;
+import cbms_backend.core.exception.*;
 import cbms_backend.core.util.ApiResponse;
 import cbms_backend.material.dto.create_stock_in.CreateStockInRequest;
+import cbms_backend.material.dto.create_stock_out.CreateStockOutRequest;
 import cbms_backend.material.dto.get_stock_movement.StockMovementResponse;
 import cbms_backend.material.dto.get_stock_movement.WarehouseStockSummaryResponse;
 import cbms_backend.material.entity.Material;
@@ -15,6 +13,8 @@ import cbms_backend.material.entity.Supplier;
 import cbms_backend.material.repository.MaterialRepository;
 import cbms_backend.material.repository.StockMovementRepository;
 import cbms_backend.material.repository.SupplierRepository;
+import cbms_backend.order.entity.Order;
+import cbms_backend.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +33,7 @@ public class StockMovementServiceImplement implements StockMovementService {
     private final StockMovementRepository stockMovementRepository;
     private final MaterialRepository materialRepository;
     private final SupplierRepository supplierRepository;
+    private final OrderRepository orderRepository;
 
     @Override
     @Transactional
@@ -61,6 +62,37 @@ public class StockMovementServiceImplement implements StockMovementService {
 
         StockMovement saved = stockMovementRepository.save(stockMovement);
         return ApiResponse.success(StockMovementResponse.fromEntity(saved), "Stock in recorded successfully");
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<StockMovementResponse> recordStockOut(CreateStockOutRequest request) {
+        Material material = materialRepository.findById(request.materialId())
+                .orElseThrow(() -> new MaterialNotExistsException("Material does not exist"));
+
+        Order order = orderRepository.findById(request.orderId())
+                .orElseThrow(() -> new OrderNotExistsException("Order does not exist"));
+
+        double currentQuantity = material.getQuantity() != null ? material.getQuantity() : 0.0;
+        if (currentQuantity < request.quantity()) {
+            throw new InsufficientStockException(
+                    "Insufficient material quantity in stock (available: " + currentQuantity +
+                    ", requested: " + request.quantity() + ")"
+            );
+        }
+
+        material.setQuantity(currentQuantity - request.quantity());
+        materialRepository.save(material);
+
+        StockMovement stockMovement = new StockMovement();
+        stockMovement.setMaterial(material);
+        stockMovement.setOrder(order);
+        stockMovement.setType(StockMovementType.OUT);
+        stockMovement.setQuantity(request.quantity());
+        stockMovement.setCreatedAt(Instant.now());
+
+        StockMovement saved = stockMovementRepository.save(stockMovement);
+        return ApiResponse.success(StockMovementResponse.fromEntity(saved), "Stock out recorded successfully");
     }
 
     @Override
@@ -180,7 +212,13 @@ public class StockMovementServiceImplement implements StockMovementService {
                 .orElseThrow(() -> new StockMovementNotExistsException("Stock movement does not exist"));
 
         if (movement.getType() == StockMovementType.OUT) {
-            throw new CannotDeleteStockMovementException("Deleting stock-out movements is not supported yet until Order workflow is implemented");
+            Material material = movement.getMaterial();
+            if (material != null) {
+                double currentQuantity = material.getQuantity() != null ? material.getQuantity() : 0.0;
+                double movementQuantity = movement.getQuantity() != null ? movement.getQuantity() : 0.0;
+                material.setQuantity(currentQuantity + movementQuantity);
+                materialRepository.save(material);
+            }
         }
 
         if (movement.getType() == StockMovementType.IN) {

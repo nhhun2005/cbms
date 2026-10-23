@@ -1,12 +1,9 @@
 package cbms_backend.material.controller;
 
-import cbms_backend.core.exception.CannotDeleteStockMovementException;
-import cbms_backend.core.exception.GlobalExceptionHandler;
-import cbms_backend.core.exception.MaterialNotExistsException;
-import cbms_backend.core.exception.StockMovementNotExistsException;
-import cbms_backend.core.exception.SupplierNotExistsException;
+import cbms_backend.core.exception.*;
 import cbms_backend.core.util.ApiResponse;
 import cbms_backend.material.dto.create_stock_in.CreateStockInRequest;
+import cbms_backend.material.dto.create_stock_out.CreateStockOutRequest;
 import cbms_backend.material.dto.get_stock_movement.StockMovementResponse;
 import cbms_backend.material.entity.StockMovementType;
 import cbms_backend.material.service.StockMovementService;
@@ -463,5 +460,64 @@ class StockMovementControllerTest {
         mockMvc.perform(delete("/api/v1/stock-movements/{id}", id))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Deleting stock-out movements is not supported yet until Order workflow is implemented"));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/stock-movements/out should return 201 when valid")
+    void recordStockOut_shouldReturn201_whenValid() throws Exception {
+        UUID materialId = UUID.randomUUID();
+        UUID orderId = UUID.randomUUID();
+
+        StockMovementResponse response = new StockMovementResponse(
+                UUID.randomUUID(),
+                materialId,
+                "Vải Gấm",
+                null,
+                null,
+                orderId,
+                StockMovementType.OUT,
+                15.0,
+                35.0,
+                Instant.now()
+        );
+
+        when(stockMovementService.recordStockOut(any(CreateStockOutRequest.class)))
+                .thenReturn(ApiResponse.success(response, "Stock out recorded successfully"));
+
+        mockMvc.perform(post("/api/v1/stock-movements/out")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "materialId": "%s",
+                                    "orderId": "%s",
+                                    "quantity": 15.0
+                                }
+                                """.formatted(materialId, orderId)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.type").value("OUT"))
+                .andExpect(jsonPath("$.data.quantity").value(15.0))
+                .andExpect(jsonPath("$.data.orderId").value(orderId.toString()));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/stock-movements/out should return 400 when insufficient stock")
+    void recordStockOut_shouldReturn400_whenInsufficientStock() throws Exception {
+        UUID materialId = UUID.randomUUID();
+        UUID orderId = UUID.randomUUID();
+
+        when(stockMovementService.recordStockOut(any(CreateStockOutRequest.class)))
+                .thenThrow(new InsufficientStockException("Insufficient material quantity in stock"));
+
+        mockMvc.perform(post("/api/v1/stock-movements/out")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                    "materialId": "%s",
+                                    "orderId": "%s",
+                                    "quantity": 100.0
+                                }
+                                """.formatted(materialId, orderId)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Insufficient material quantity in stock"));
     }
 }

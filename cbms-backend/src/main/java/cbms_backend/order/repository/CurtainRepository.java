@@ -10,4 +10,5 @@ import java.util.UUID;
 @Repository
 public interface CurtainRepository extends JpaRepository<Curtain, UUID> {
     List<Curtain> findByOrderId(UUID orderId);
+    long countByOrderId(UUID orderId);
 }

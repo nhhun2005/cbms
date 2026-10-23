@@ -1,5 +1,6 @@
 package cbms_backend.customer.service;
 
+import cbms_backend.core.exception.CustomerAddressAlreadyActiveException;
 import cbms_backend.core.exception.CustomerAddressAlreadyInactiveException;
 import cbms_backend.core.exception.CustomerAddressNotExistsException;
 import cbms_backend.core.exception.CustomerAlreadyExistsException;
@@ -526,6 +527,89 @@ class CustomerServiceImplementTest {
         assertThrows(
                 CustomerAddressNotExistsException.class,
                 () -> customerService.disableCustomerAddress(customerId, addressId)
+        );
+        verify(customerAddressRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should enable customer address successfully when currently inactive")
+    void enableCustomerAddress_shouldEnableAddressSuccessfully_whenInactive() {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        CustomerInformation customer = new CustomerInformation();
+        customer.setId(customerId);
+
+        CustomerAddress existingAddress = new CustomerAddress();
+        existingAddress.setId(addressId);
+        existingAddress.setCustomer(customer);
+        existingAddress.setType(AddressType.RESIDENTIAL);
+        existingAddress.setAddress("Inactive Address");
+        existingAddress.setIsActive(false);
+
+        when(customerRepository.existsById(customerId)).thenReturn(true);
+        when(customerAddressRepository.findByIdAndCustomerId(addressId, customerId)).thenReturn(Optional.of(existingAddress));
+        when(customerAddressRepository.save(any(CustomerAddress.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ApiResponse<CustomerAddressResponse> response = customerService.enableCustomerAddress(customerId, addressId);
+
+        assertNotNull(response);
+        assertEquals("Customer address enabled successfully", response.getMessage());
+        assertTrue(response.getData().isActive());
+        verify(customerAddressRepository).save(existingAddress);
+    }
+
+    @Test
+    @DisplayName("Should throw CustomerAddressAlreadyActiveException when enabling already active address")
+    void enableCustomerAddress_shouldThrowCustomerAddressAlreadyActiveException_whenAlreadyActive() {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        CustomerInformation customer = new CustomerInformation();
+        customer.setId(customerId);
+
+        CustomerAddress existingAddress = new CustomerAddress();
+        existingAddress.setId(addressId);
+        existingAddress.setCustomer(customer);
+        existingAddress.setIsActive(true);
+
+        when(customerRepository.existsById(customerId)).thenReturn(true);
+        when(customerAddressRepository.findByIdAndCustomerId(addressId, customerId)).thenReturn(Optional.of(existingAddress));
+
+        assertThrows(
+                CustomerAddressAlreadyActiveException.class,
+                () -> customerService.enableCustomerAddress(customerId, addressId)
+        );
+        verify(customerAddressRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should throw CustomerNotExistsException when enabling address of non-existent customer")
+    void enableCustomerAddress_shouldThrowCustomerNotExistsException_whenCustomerNotFound() {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        when(customerRepository.existsById(customerId)).thenReturn(false);
+
+        assertThrows(
+                CustomerNotExistsException.class,
+                () -> customerService.enableCustomerAddress(customerId, addressId)
+        );
+        verify(customerAddressRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should throw CustomerAddressNotExistsException when enabling non-existent address")
+    void enableCustomerAddress_shouldThrowCustomerAddressNotExistsException_whenAddressNotFound() {
+        UUID customerId = UUID.randomUUID();
+        UUID addressId = UUID.randomUUID();
+
+        when(customerRepository.existsById(customerId)).thenReturn(true);
+        when(customerAddressRepository.findByIdAndCustomerId(addressId, customerId)).thenReturn(Optional.empty());
+
+        assertThrows(
+                CustomerAddressNotExistsException.class,
+                () -> customerService.enableCustomerAddress(customerId, addressId)
         );
         verify(customerAddressRepository, never()).save(any());
     }
