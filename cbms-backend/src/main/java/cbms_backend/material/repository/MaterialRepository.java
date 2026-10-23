@@ -11,4 +11,5 @@ import java.util.UUID;
 public interface MaterialRepository extends JpaRepository<Material, UUID> {
     Optional<Material> findByName(String name);
     boolean existsByName(String name);
+    boolean existsByNameAndIdNot(String name, UUID id);
 }

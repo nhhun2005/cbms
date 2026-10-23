@@ -150,6 +150,27 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error(ex.getMessage()));
     }
+
+    @ExceptionHandler(MaterialAlreadyExistsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMaterialAlreadyExists(MaterialAlreadyExistsException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(MaterialNotExistsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMaterialNotExists(MaterialNotExistsException ex) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(MaterialInUseException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMaterialInUse(MaterialInUseException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
 }
 
 

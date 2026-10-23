@@ -14,4 +14,5 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, UU
     List<StockMovement> findByOrderId(UUID orderId);
     List<StockMovement> findBySupplierId(UUID supplierId);
     List<StockMovement> findByType(StockMovementType type);
+    boolean existsByMaterialId(UUID materialId);
 }
