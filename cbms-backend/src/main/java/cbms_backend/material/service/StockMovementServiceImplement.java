@@ -5,7 +5,6 @@ import cbms_backend.core.util.ApiResponse;
 import cbms_backend.material.dto.create_stock_in.CreateStockInRequest;
 import cbms_backend.material.dto.create_stock_out.CreateStockOutRequest;
 import cbms_backend.material.dto.get_stock_movement.StockMovementResponse;
-import cbms_backend.material.dto.get_stock_movement.WarehouseStockSummaryResponse;
 import cbms_backend.material.entity.Material;
 import cbms_backend.material.entity.StockMovement;
 import cbms_backend.material.entity.StockMovementType;
@@ -20,9 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -107,19 +104,19 @@ public class StockMovementServiceImplement implements StockMovementService {
     @Override
     @Transactional(readOnly = true)
     public ApiResponse<List<StockMovementResponse>> getAllStockMovements() {
-        return getWarehouseHistory(null, null, null, null, null);
+        return getStockMovementHistory(null, null, null, null, null);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<List<StockMovementResponse>> getWarehouseHistory(
+    public ApiResponse<List<StockMovementResponse>> getStockMovementHistory(
             StockMovementType type,
             UUID materialId,
             UUID supplierId,
             Instant from,
             Instant to
     ) {
-        List<StockMovement> movements = stockMovementRepository.findWarehouseHistory(type, materialId, supplierId);
+        List<StockMovement> movements = stockMovementRepository.findHistory(type, materialId, supplierId);
 
         Stream<StockMovement> stream = movements.stream();
         if (from != null) {
@@ -133,48 +130,7 @@ public class StockMovementServiceImplement implements StockMovementService {
                 .map(StockMovementResponse::fromEntity)
                 .toList();
 
-        return ApiResponse.success(result, "Warehouse stock movements retrieved successfully");
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public ApiResponse<WarehouseStockSummaryResponse> getWarehouseSummary() {
-        List<StockMovement> all = stockMovementRepository.findAllWithDetails();
-
-        long totalMovements = all.size();
-        double totalIn = 0.0;
-        double totalOut = 0.0;
-        double totalAdjustment = 0.0;
-        Set<UUID> distinctMaterials = new HashSet<>();
-
-        for (StockMovement m : all) {
-            if (m.getMaterial() != null && m.getMaterial().getId() != null) {
-                distinctMaterials.add(m.getMaterial().getId());
-            }
-            if (m.getType() == StockMovementType.IN) {
-                totalIn += m.getQuantity() != null ? m.getQuantity() : 0.0;
-            } else if (m.getType() == StockMovementType.OUT) {
-                totalOut += m.getQuantity() != null ? m.getQuantity() : 0.0;
-            } else if (m.getType() == StockMovementType.ADJUSTMENT) {
-                totalAdjustment += m.getQuantity() != null ? m.getQuantity() : 0.0;
-            }
-        }
-
-        List<StockMovementResponse> recentMovements = all.stream()
-                .limit(10)
-                .map(StockMovementResponse::fromEntity)
-                .toList();
-
-        WarehouseStockSummaryResponse summary = new WarehouseStockSummaryResponse(
-                totalMovements,
-                totalIn,
-                totalOut,
-                totalAdjustment,
-                distinctMaterials.size(),
-                recentMovements
-        );
-
-        return ApiResponse.success(summary, "Warehouse summary retrieved successfully");
+        return ApiResponse.success(result, "Stock movements retrieved successfully");
     }
 
     @Override

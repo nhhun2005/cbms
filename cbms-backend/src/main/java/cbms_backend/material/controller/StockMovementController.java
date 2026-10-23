@@ -4,7 +4,6 @@ import cbms_backend.core.util.ApiResponse;
 import cbms_backend.material.dto.create_stock_in.CreateStockInRequest;
 import cbms_backend.material.dto.create_stock_out.CreateStockOutRequest;
 import cbms_backend.material.dto.get_stock_movement.StockMovementResponse;
-import cbms_backend.material.dto.get_stock_movement.WarehouseStockSummaryResponse;
 import cbms_backend.material.entity.StockMovementType;
 import cbms_backend.material.service.StockMovementService;
 import jakarta.validation.Valid;
@@ -43,20 +42,15 @@ public class StockMovementController {
                 .body(stockMovementService.recordStockOut(request));
     }
 
-    @GetMapping(value = {"", "/history", "/warehouse/history"})
-    public ResponseEntity<ApiResponse<List<StockMovementResponse>>> getWarehouseHistory(
+    @GetMapping(value = {"", "/history"})
+    public ResponseEntity<ApiResponse<List<StockMovementResponse>>> getStockMovementHistory(
             @RequestParam(required = false) StockMovementType type,
             @RequestParam(required = false) UUID materialId,
             @RequestParam(required = false) UUID supplierId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to
     ) {
-        return ResponseEntity.ok(stockMovementService.getWarehouseHistory(type, materialId, supplierId, from, to));
-    }
-
-    @GetMapping("/warehouse/summary")
-    public ResponseEntity<ApiResponse<WarehouseStockSummaryResponse>> getWarehouseSummary() {
-        return ResponseEntity.ok(stockMovementService.getWarehouseSummary());
+        return ResponseEntity.ok(stockMovementService.getStockMovementHistory(type, materialId, supplierId, from, to));
     }
 
     @GetMapping("/{id}")

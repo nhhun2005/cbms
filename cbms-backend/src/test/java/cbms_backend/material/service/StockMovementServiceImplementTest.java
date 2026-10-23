@@ -218,7 +218,7 @@ class StockMovementServiceImplementTest {
         m2.setType(StockMovementType.IN);
         m2.setQuantity(20.0);
 
-        when(stockMovementRepository.findWarehouseHistory(null, null, null)).thenReturn(List.of(m1, m2));
+        when(stockMovementRepository.findHistory(null, null, null)).thenReturn(List.of(m1, m2));
 
         ApiResponse<List<StockMovementResponse>> response = stockMovementService.getAllStockMovements();
 
@@ -227,8 +227,8 @@ class StockMovementServiceImplementTest {
     }
 
     @Test
-    @DisplayName("getWarehouseHistory should filter movements by type, materialId, supplierId, and date range")
-    void getWarehouseHistory_shouldFilterCorrectly() {
+    @DisplayName("getStockMovementHistory should filter movements by type, materialId, supplierId, and date range")
+    void getStockMovementHistory_shouldFilterCorrectly() {
         UUID materialId = UUID.randomUUID();
         UUID supplierId = UUID.randomUUID();
         Material material = new Material();
@@ -257,10 +257,10 @@ class StockMovementServiceImplementTest {
         tooOld.setQuantity(30.0);
         tooOld.setCreatedAt(past.minusSeconds(3600));
 
-        when(stockMovementRepository.findWarehouseHistory(StockMovementType.IN, materialId, supplierId))
+        when(stockMovementRepository.findHistory(StockMovementType.IN, materialId, supplierId))
                 .thenReturn(List.of(inRange, tooOld));
 
-        ApiResponse<List<StockMovementResponse>> response = stockMovementService.getWarehouseHistory(
+        ApiResponse<List<StockMovementResponse>> response = stockMovementService.getStockMovementHistory(
                 StockMovementType.IN,
                 materialId,
                 supplierId,
@@ -272,46 +272,6 @@ class StockMovementServiceImplementTest {
         assertEquals(1, response.getData().size());
         assertEquals(inRange.getId(), response.getData().get(0).id());
         assertEquals(50.0, response.getData().get(0).quantity());
-    }
-
-    @Test
-    @DisplayName("getWarehouseSummary should compute totals for IN, OUT, ADJUSTMENT, and distinct materials")
-    void getWarehouseSummary_shouldComputeTotals() {
-        Material m1 = new Material();
-        m1.setId(UUID.randomUUID());
-        Material m2 = new Material();
-        m2.setId(UUID.randomUUID());
-
-        StockMovement smIn = new StockMovement();
-        smIn.setId(UUID.randomUUID());
-        smIn.setMaterial(m1);
-        smIn.setType(StockMovementType.IN);
-        smIn.setQuantity(100.0);
-
-        StockMovement smOut = new StockMovement();
-        smOut.setId(UUID.randomUUID());
-        smOut.setMaterial(m1);
-        smOut.setType(StockMovementType.OUT);
-        smOut.setQuantity(25.0);
-
-        StockMovement smAdj = new StockMovement();
-        smAdj.setId(UUID.randomUUID());
-        smAdj.setMaterial(m2);
-        smAdj.setType(StockMovementType.ADJUSTMENT);
-        smAdj.setQuantity(5.0);
-
-        when(stockMovementRepository.findAllWithDetails()).thenReturn(List.of(smIn, smOut, smAdj));
-
-        var response = stockMovementService.getWarehouseSummary();
-
-        assertNotNull(response);
-        assertNotNull(response.getData());
-        assertEquals(3, response.getData().totalMovements());
-        assertEquals(100.0, response.getData().totalInQuantity());
-        assertEquals(25.0, response.getData().totalOutQuantity());
-        assertEquals(5.0, response.getData().totalAdjustmentQuantity());
-        assertEquals(2, response.getData().distinctMaterialsCount());
-        assertEquals(3, response.getData().recentMovements().size());
     }
 
     @Test

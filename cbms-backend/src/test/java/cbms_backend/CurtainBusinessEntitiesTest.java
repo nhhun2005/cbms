@@ -273,11 +273,13 @@ class CurtainBusinessEntitiesTest {
         Invoice invoice = new Invoice();
         invoice.setSubtotal(-100.0);
         invoice.setTaxRate(-0.05);
+        invoice.setDiscount(-10.0);
         invoice.setTotal(-105.0);
 
         Set<ConstraintViolation<Invoice>> violations = validator.validate(invoice);
         assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("subtotal"));
         assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("taxRate"));
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("discount"));
         assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("total"));
     }
 }

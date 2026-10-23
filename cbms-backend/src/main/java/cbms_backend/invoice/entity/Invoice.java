@@ -3,6 +3,7 @@ package cbms_backend.invoice.entity;
 import cbms_backend.customer.entity.CustomerInformation;
 import cbms_backend.order.entity.Order;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -47,6 +48,12 @@ public class Invoice {
     @DecimalMin(value = "0.0", message = "Tax rate must be at least 0.0")
     @Column(name = "tax_rate", nullable = false)
     private Double taxRate;
+
+    @NotNull(message = "Discount must not be null")
+    @DecimalMin(value = "0.0", message = "Discount must be between 0 and 100")
+    @DecimalMax(value = "100.0", message = "Discount must be between 0 and 100")
+    @Column(nullable = false)
+    private Double discount = 0.0;
 
     @NotNull(message = "Total must not be null")
     @PositiveOrZero(message = "Total must be greater than or equal to 0")

@@ -214,7 +214,7 @@ class StockMovementControllerTest {
 
     @Test
     @DisplayName("GET /api/v1/stock-movements should return 200 with list of movements")
-    void getWarehouseHistory_shouldReturn200() throws Exception {
+    void getStockMovementHistory_shouldReturn200() throws Exception {
         StockMovementResponse response = new StockMovementResponse(
                 UUID.randomUUID(),
                 UUID.randomUUID(),
@@ -228,19 +228,19 @@ class StockMovementControllerTest {
                 Instant.now()
         );
 
-        when(stockMovementService.getWarehouseHistory(null, null, null, null, null))
-                .thenReturn(ApiResponse.success(List.of(response), "Warehouse stock movements retrieved successfully"));
+        when(stockMovementService.getStockMovementHistory(null, null, null, null, null))
+                .thenReturn(ApiResponse.success(List.of(response), "Stock movements retrieved successfully"));
 
         mockMvc.perform(get("/api/v1/stock-movements"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Warehouse stock movements retrieved successfully"))
+                .andExpect(jsonPath("$.message").value("Stock movements retrieved successfully"))
                 .andExpect(jsonPath("$.data.length()").value(1))
                 .andExpect(jsonPath("$.data[0].materialName").value("Vải Lụa"));
     }
 
     @Test
-    @DisplayName("GET /api/v1/stock-movements/warehouse/history should return 200 with filtered movements")
-    void getWarehouseHistory_shouldReturn200_onWarehouseHistoryPath() throws Exception {
+    @DisplayName("GET /api/v1/stock-movements with filter params should return 200 with filtered movements")
+    void getStockMovementHistory_shouldReturn200_withFilters() throws Exception {
         UUID materialId = UUID.randomUUID();
         UUID supplierId = UUID.randomUUID();
         StockMovementResponse response = new StockMovementResponse(
@@ -256,10 +256,10 @@ class StockMovementControllerTest {
                 Instant.now()
         );
 
-        when(stockMovementService.getWarehouseHistory(eq(StockMovementType.IN), eq(materialId), eq(supplierId), any(), any()))
-                .thenReturn(ApiResponse.success(List.of(response), "Warehouse stock movements retrieved successfully"));
+        when(stockMovementService.getStockMovementHistory(eq(StockMovementType.IN), eq(materialId), eq(supplierId), any(), any()))
+                .thenReturn(ApiResponse.success(List.of(response), "Stock movements retrieved successfully"));
 
-        mockMvc.perform(get("/api/v1/stock-movements/warehouse/history")
+        mockMvc.perform(get("/api/v1/stock-movements")
                         .param("type", "IN")
                         .param("materialId", materialId.toString())
                         .param("supplierId", supplierId.toString())
@@ -273,37 +273,13 @@ class StockMovementControllerTest {
 
     @Test
     @DisplayName("GET /api/v1/stock-movements/history should also return 200")
-    void getWarehouseHistory_shouldReturn200_onHistoryPath() throws Exception {
-        when(stockMovementService.getWarehouseHistory(null, null, null, null, null))
-                .thenReturn(ApiResponse.success(List.of(), "Warehouse stock movements retrieved successfully"));
+    void getStockMovementHistory_shouldReturn200_onHistoryPath() throws Exception {
+        when(stockMovementService.getStockMovementHistory(null, null, null, null, null))
+                .thenReturn(ApiResponse.success(List.of(), "Stock movements retrieved successfully"));
 
         mockMvc.perform(get("/api/v1/stock-movements/history"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Warehouse stock movements retrieved successfully"));
-    }
-
-    @Test
-    @DisplayName("GET /api/v1/stock-movements/warehouse/summary should return 200 with warehouse summary")
-    void getWarehouseSummary_shouldReturn200() throws Exception {
-        var summary = new cbms_backend.material.dto.get_stock_movement.WarehouseStockSummaryResponse(
-                5,
-                250.0,
-                50.0,
-                0.0,
-                3,
-                List.of()
-        );
-
-        when(stockMovementService.getWarehouseSummary())
-                .thenReturn(ApiResponse.success(summary, "Warehouse summary retrieved successfully"));
-
-        mockMvc.perform(get("/api/v1/stock-movements/warehouse/summary"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Warehouse summary retrieved successfully"))
-                .andExpect(jsonPath("$.data.totalMovements").value(5))
-                .andExpect(jsonPath("$.data.totalInQuantity").value(250.0))
-                .andExpect(jsonPath("$.data.totalOutQuantity").value(50.0))
-                .andExpect(jsonPath("$.data.distinctMaterialsCount").value(3));
+                .andExpect(jsonPath("$.message").value("Stock movements retrieved successfully"));
     }
 
     @Test

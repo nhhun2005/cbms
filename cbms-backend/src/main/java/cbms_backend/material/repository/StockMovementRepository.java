@@ -21,6 +21,9 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, UU
     boolean existsBySupplierId(UUID supplierId);
     boolean existsByOrderId(UUID orderId);
 
+    @Query("SELECT sm FROM StockMovement sm LEFT JOIN FETCH sm.material WHERE sm.order.id = :orderId AND sm.type = :type")
+    List<StockMovement> findByOrderIdAndTypeWithMaterial(@Param("orderId") UUID orderId, @Param("type") StockMovementType type);
+
     @Query("SELECT sm FROM StockMovement sm LEFT JOIN FETCH sm.material LEFT JOIN FETCH sm.supplier LEFT JOIN FETCH sm.order WHERE sm.id = :id")
     Optional<StockMovement> findByIdWithDetails(@Param("id") UUID id);
 
@@ -43,7 +46,7 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, UU
           AND (:supplierId IS NULL OR sm.supplier.id = :supplierId)
         ORDER BY sm.createdAt DESC
     """)
-    List<StockMovement> findWarehouseHistory(
+    List<StockMovement> findHistory(
             @Param("type") StockMovementType type,
             @Param("materialId") UUID materialId,
             @Param("supplierId") UUID supplierId
