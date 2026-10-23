@@ -18,7 +18,13 @@ public record UpdateMaterialRequest(
         @PositiveOrZero(message = "Quantity must be greater than or equal to 0")
         Double quantity,
 
+        @PositiveOrZero(message = "Price must be greater than or equal to 0")
+        Double price,
+
         @Size(max = 500, message = "Image URL must not exceed 500 characters")
         String imageUrl
 ) {
+    public UpdateMaterialRequest(String name, String description, String unit, Double quantity, String imageUrl) {
+        this(name, description, unit, quantity, null, imageUrl);
+    }
 }

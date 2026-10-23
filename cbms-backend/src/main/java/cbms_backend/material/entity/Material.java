@@ -45,6 +45,11 @@ public class Material {
     @Column(nullable = false)
     private Double quantity = 0.0;
 
+    @NotNull(message = "Price must not be null")
+    @PositiveOrZero(message = "Price must be greater than or equal to 0")
+    @Column(nullable = false)
+    private Double price = 100000.0;
+
     @Size(max = 500, message = "Image URL must not exceed 500 characters")
     @Column(name = "image_url", length = 500)
     private String imageUrl;

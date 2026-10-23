@@ -60,6 +60,7 @@ class MaterialControllerTest {
                 "Mô tả chi tiết",
                 "mét",
                 50.0,
+                150000.0,
                 "https://res.cloudinary.com/demo/image/upload/sample.jpg",
                 Instant.now()
         );
@@ -75,6 +76,7 @@ class MaterialControllerTest {
                                     "description": "Mô tả chi tiết",
                                     "unit": "mét",
                                     "quantity": 50.0,
+                                    "price": 150000.0,
                                     "imageUrl": "https://res.cloudinary.com/demo/image/upload/sample.jpg"
                                 }
                                 """))
@@ -84,6 +86,7 @@ class MaterialControllerTest {
                 .andExpect(jsonPath("$.data.name").value("Vải gấm hoa văn"))
                 .andExpect(jsonPath("$.data.unit").value("mét"))
                 .andExpect(jsonPath("$.data.quantity").value(50.0))
+                .andExpect(jsonPath("$.data.price").value(150000.0))
                 .andExpect(jsonPath("$.data.imageUrl").value("https://res.cloudinary.com/demo/image/upload/sample.jpg"));
     }
 

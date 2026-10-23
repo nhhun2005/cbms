@@ -11,9 +11,14 @@ public record MaterialResponse(
         String description,
         String unit,
         Double quantity,
+        Double price,
         String imageUrl,
         Instant updatedAt
 ) {
+    public MaterialResponse(UUID id, String name, String description, String unit, Double quantity, String imageUrl, Instant updatedAt) {
+        this(id, name, description, unit, quantity, 100000.0, imageUrl, updatedAt);
+    }
+
     public static MaterialResponse fromEntity(Material material) {
         if (material == null) {
             return null;
@@ -24,6 +29,7 @@ public record MaterialResponse(
                 material.getDescription(),
                 material.getUnit(),
                 material.getQuantity(),
+                material.getPrice(),
                 material.getImageUrl(),
                 material.getUpdatedAt()
         );

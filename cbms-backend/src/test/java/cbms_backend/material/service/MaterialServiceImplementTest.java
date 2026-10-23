@@ -66,6 +66,7 @@ class MaterialServiceImplementTest {
         assertEquals("Chất liệu cao cấp chống nắng", response.getData().description());
         assertEquals("mét", response.getData().unit());
         assertEquals(150.5, response.getData().quantity());
+        assertEquals(100000.0, response.getData().price());
         assertEquals("https://res.cloudinary.com/demo/image/upload/v123456/curtains/material1.jpg", response.getData().imageUrl());
         assertEquals("Material created successfully", response.getMessage());
 
@@ -93,8 +94,35 @@ class MaterialServiceImplementTest {
 
         assertNotNull(response.getData());
         assertEquals(0.0, response.getData().quantity());
+        assertEquals(100000.0, response.getData().price());
         assertNull(response.getData().imageUrl());
         assertNull(response.getData().description());
+    }
+
+    @Test
+    @DisplayName("createMaterial should save custom price when provided")
+    void createMaterial_shouldSaveCustomPrice_whenProvided() {
+        CreateMaterialRequest request = new CreateMaterialRequest(
+                "Vải gấm hoàng gia",
+                "Mô tả",
+                "mét",
+                50.0,
+                250000.0,
+                null
+        );
+
+        when(materialRepository.existsByName("Vải gấm hoàng gia")).thenReturn(false);
+        when(materialRepository.save(any(Material.class))).thenAnswer(invocation -> {
+            Material m = invocation.getArgument(0);
+            m.setId(UUID.randomUUID());
+            m.setUpdatedAt(Instant.now());
+            return m;
+        });
+
+        ApiResponse<MaterialResponse> response = materialService.createMaterial(request);
+
+        assertNotNull(response.getData());
+        assertEquals(250000.0, response.getData().price());
     }
 
     @Test

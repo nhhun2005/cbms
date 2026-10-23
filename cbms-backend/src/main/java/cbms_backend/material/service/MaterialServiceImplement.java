@@ -37,6 +37,7 @@ public class MaterialServiceImplement implements MaterialService {
         material.setUnit(request.unit().trim());
         material.setDescription(cleanString(request.description()));
         material.setQuantity(request.quantity() != null ? request.quantity() : 0.0);
+        material.setPrice(request.price() != null ? request.price() : 100000.0);
         material.setImageUrl(cleanString(request.imageUrl()));
 
         Material saved = materialRepository.save(material);
@@ -59,6 +60,9 @@ public class MaterialServiceImplement implements MaterialService {
         material.setDescription(cleanString(request.description()));
         if (request.quantity() != null) {
             material.setQuantity(request.quantity());
+        }
+        if (request.price() != null) {
+            material.setPrice(request.price());
         }
         material.setImageUrl(cleanString(request.imageUrl()));
 

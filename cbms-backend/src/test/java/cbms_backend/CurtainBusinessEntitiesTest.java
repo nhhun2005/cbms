@@ -116,6 +116,7 @@ class CurtainBusinessEntitiesTest {
         material.setImageUrl("https://example.com/silk.jpg");
         Material savedMaterial = materialRepository.save(material);
         assertThat(savedMaterial.getId()).isNotNull();
+        assertThat(savedMaterial.getPrice()).isEqualTo(100000.0);
         assertThat(savedMaterial.getUpdatedAt()).isNotNull();
 
         Supplier supplier = new Supplier();
